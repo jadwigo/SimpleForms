@@ -5,7 +5,7 @@
  * TODO: make the email-addresses better key=>value pairs
  */
 
-namespace SimpleForms;
+namespace Bolt\Extension\Bolt\SimpleForms;
 
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Filesystem\Filesystem;
@@ -16,77 +16,71 @@ class Extension extends \Bolt\BaseExtension
     private $text_labels;
     private $labelsenabled;
 
-    public function info()
+    const NAME = 'SimpleForms';
+    /**
+     * Provide default Extension Name
+     */
+    public function getName()
     {
-        $data = array(
-            'name' =>"Simple Forms",
-            'description' => "This extension will allow you to insert simple forms on your site, for users to get in touch, send you a quick note or something like that. To use, configure the required fields in config.yml, and place <code>{{ simpleform('contact') }}</code> in your templates.",
-            'author' => "Bob den Otter",
-            'link' => "http://bolt.cm",
-            'version' => "1.12",
-            'required_bolt_version' => "1.6",
-            'highest_bolt_version' => "1.6",
-            'type' => "Twig function",
-            'first_releasedate' => "2012-10-10",
-            'latest_releasedate' => "2014-06-24",
-            'allow_in_user_content' => true,
-        );
-        return $data;
+        return Extension::NAME;
     }
 
     public function initialize()
     {
-        // fields that the global config should have
-        $this->global_fields = array(
-            'stylesheet',
-            'template',
-            'mail_template',
-            'message_ok',
-            'message_error',
-            'message_technical',
-            'button_text',
-            'attach_files',
-            'from_email',
-            'from_name',
-            'recipient_cc_email',
-            'recipient_cc_name',
-            'recipient_bcc_email',
-            'testmode',
-            'testmode_recipient',
-            'debugmode',
-            'insert_into_table'
-        );
-        // note that debugmode and insert_into_table are undocumented
+        if ($this->app['config']->getWhichEnd() == 'frontend') {
+            // Add Twig functions
+            // fields that the global config should have
+            $this->global_fields = array(
+                'stylesheet',
+                'template',
+                'mail_template',
+                'message_ok',
+                'message_error',
+                'message_technical',
+                'button_text',
+                'attach_files',
+                'from_email',
+                'from_name',
+                'recipient_cc_email',
+                'recipient_cc_name',
+                'recipient_bcc_email',
+                'testmode',
+                'testmode_recipient',
+                'debugmode',
+                'insert_into_table'
+            );
+            // note that debugmode and insert_into_table are undocumented
 
-        // labels to translate
-        $this->text_labels = array(
-            'message_ok',
-            'message_error',
-            'message_technical',
-            'button_text',
-            'label',
-            'placeholder'
-        );
+            // labels to translate
+            $this->text_labels = array(
+                'message_ok',
+                'message_error',
+                'message_technical',
+                'button_text',
+                'label',
+                'placeholder'
+            );
 
-        // Make sure the css is inserted as well..
-        if (!empty($this->config['stylesheet'])) {
-            $this->addCSS($this->config['stylesheet']);
+            // Make sure the css is inserted as well..
+            if (!empty($this->config['stylesheet'])) {
+                $this->addCSS($this->config['stylesheet']);
+            }
+            else {
+                $this->config['stylesheet'] = "";
+            }
+
+            // Make sure CSRF is set, unless disabled on purpose
+            if (!isset($this->config['csrf'])) {
+                $this->config['csrf'] = true;
+            }
+
+            // Set the button text.
+            if (empty($this->config['button_text'])) {
+                $this->config['button_text'] = "Send";
+            }
+
+            $this->addTwigFunction('simpleform', 'simpleForm');
         }
-        else {
-            $this->config['stylesheet'] = "";
-        }
-
-        // Make sure CSRF is set, unless disabled on purpose
-        if (!isset($this->config['csrf'])) {
-            $this->config['csrf'] = true;
-        }
-
-        // Set the button text.
-        if (empty($this->config['button_text'])) {
-            $this->config['button_text'] = "Send";
-        }
-
-        $this->addTwigFunction('simpleform', 'simpleForm');
     }
 
     private function buildField($name, $field, $with = array()) {

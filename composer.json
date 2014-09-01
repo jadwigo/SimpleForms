@@ -1,0 +1,34 @@
+{
+    "name": "bolt/simpleforms",
+    "description": "This extension will allow you to insert simple forms on your site, for users to get in touch, send you a quick note or something like that. To use, configure the required fields in config.yml, and place <code>{{ simpleform('contact') }}</code> in your templates.",
+    "type": "bolt-extension",
+    "keywords": [
+        "forms",
+        "input",
+        "email",
+        "upload"
+    ],
+    "require": {
+        "bolt/bolt": ">=2.0.0,<3.0.0"
+    },
+    "authors": [
+        {
+            "name": "Lodewijk Evers",
+            "email": "lodewijk@twokings.nl",
+            "homepage": "https://github.com/jadwigo"
+        }
+    ],
+    "autoload": {
+        "files": [
+            "init.php"
+        ],
+        "psr-4" : {
+            "Bolt\\Extension\\Bolt\\SimpleForms\\" : ""
+        }
+    },
+    "extra": {
+        "branch-alias": {
+            "dev-master": "1.*"
+        }
+    }
+}
