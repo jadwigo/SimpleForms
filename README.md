@@ -1,13 +1,13 @@
 Simple Forms
 ============
 
-The "Simple Forms" extension allows you to insert forms into your templates. Use it by simply placing the following in
-your template, with the name of the form to insert:
+The "Simple Forms" extension allows you to insert forms into your templates. Use it by simply placing the following in your template, 
+with the name of the form to insert:
 
     {{ simpleform('formname') }}
 
-With SimpleForms you create forms, by defining them in the `config.yml`-file. The file has some general settings, plus
-a section with fields for each different form.
+With SimpleForms you create forms, by defining them in the `extensions/SimpleForms.yml`-file. The file has some general settings, 
+plus a section with fields for each different form.
 
 General settings
 ----------------
@@ -27,7 +27,7 @@ General settings
  - `message_technical: ...` - The message to display when there's a technical error preventing the sending of the email.
     Most likely this is caused because Swiftmailer can't send the email. Check the Swiftmailer settings in the global
     `config.yml` if this message is shown.
- - `redirect_on_ok: ...` - Instead of simply displaying a message when the form is 'OK', you can also redirect to a different page on the site, for a more extended message after submitting the form. The value should be a `contenttype/id` or `contenttype/slug` pair. For example: `entry/1` or `page/thank-you`.   
+ - `redirect_on_ok: ...` - Instead of simply displaying a message when the form is 'OK', you can also redirect to a different page on the site, for a more extended message after submitting the form. The value should be a `contenttype/id` or `contenttype/slug` pair. For example: `entry/1` or `page/thank-you`.
  - `button_text: Send` - Default text on the 'send' button in the forms.
  - `recipient_cc_email: info@example.com` - Use this value to set a global cc email address, this email address will receive a copy of
     all emails sent with simpleforms.
