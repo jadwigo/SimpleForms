@@ -491,8 +491,9 @@ class Extension extends \Bolt\BaseExtension
                         "%s-%s-%s.%s",
                         date('Y-m-d'),
                         str_replace('upload', '', $fieldname),
-                        $this->app['randomgenerator']->generateString(12, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890'),
-                        pathinfo($originalname, PATHINFO_EXTENSION);
+                        $this->app['randomgenerator']->generateString(12, 
+                            'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890'),
+                        pathinfo($originalname, PATHINFO_EXTENSION)
                     );
                     $link = sprintf("%s%s/%s", $this->app['paths']['hosturl'], $linkpath, $filename);
 
