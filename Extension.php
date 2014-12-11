@@ -492,7 +492,7 @@ class Extension extends \Bolt\BaseExtension
                         date('Y-m-d'),
                         str_replace('upload', '', $fieldname),
                         $this->app['randomgenerator']->generateString(12, 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890'),
-                        getExtension($originalname)
+                        pathinfo($originalname, PATHINFO_EXTENSION);
                     );
                     $link = sprintf("%s%s/%s", $this->app['paths']['hosturl'], $linkpath, $filename);
 
