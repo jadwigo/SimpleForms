@@ -498,7 +498,7 @@ class Extension extends \Bolt\BaseExtension
                     $link = sprintf("%s%s/%s", $this->app['paths']['hosturl'], $linkpath, $filename);
 
                     // Make sure the file is in the allowed extensions.
-                    if (in_array(getExtension($originalname), $fieldvalues['filetype'])) {
+                    if (in_array(pathinfo($originalname, PATHINFO_EXTENSION), $fieldvalues['filetype'])) {
                         // If so, replace the file to designated folder.
                         $files[$fieldname]->move($path, $filename);
                         // by default we send a link
