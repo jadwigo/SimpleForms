@@ -7,9 +7,14 @@
 
 namespace Bolt\Extension\Bolt\SimpleForms;
 
+use Bolt\Application;
+use Bolt\BaseExtension;
+use Bolt\Content;
+use Bolt\Library as Lib;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Filesystem\Filesystem;
-use Bolt\Library as Lib;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class Extension extends \Bolt\BaseExtension
 {
@@ -327,7 +332,7 @@ class Extension extends \Bolt\BaseExtension
                                 $redirectpage = $this->app['storage']->getContent($formconfig['redirect_on_ok']);
                                 //\Dumper::dump($redirectpage);
                                 return Lib::simpleredirect($redirectpage->link());
-                                
+                                //return Lib::redirect($redirectpage->link());
                             }
                         }
                         else {
