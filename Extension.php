@@ -323,9 +323,11 @@ class Extension extends \Bolt\BaseExtension
 
                             // If redirect_on_ok is set, redirect to that page when succesful.
                             if (!empty($formconfig['redirect_on_ok'])) {
-                                $content = $this->app['storage']->getContent($formconfig['redirect_on_ok']);
-                                //simpleredirect($content->link(), false);
-                                return Lib::simpleredirect($content->link());
+                                //\Dumper::dump($formconfig['redirect_on_ok']);
+                                $redirectpage = $this->app['storage']->getContent($formconfig['redirect_on_ok']);
+                                //\Dumper::dump($redirectpage);
+                                return Lib::simpleredirect($redirectpage->link());
+                                
                             }
                         }
                         else {
