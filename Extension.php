@@ -9,6 +9,7 @@ namespace Bolt\Extension\Bolt\SimpleForms;
 
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Filesystem\Filesystem;
+use Bolt\Library as Lib;
 
 class Extension extends \Bolt\BaseExtension
 {
@@ -323,7 +324,8 @@ class Extension extends \Bolt\BaseExtension
                             // If redirect_on_ok is set, redirect to that page when succesful.
                             if (!empty($formconfig['redirect_on_ok'])) {
                                 $content = $this->app['storage']->getContent($formconfig['redirect_on_ok']);
-                                simpleredirect($content->link(), false);
+                                //simpleredirect($content->link(), false);
+                                return Lib::simpleredirect($content->link());
                             }
                         }
                         else {
