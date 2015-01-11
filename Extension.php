@@ -576,6 +576,11 @@ class Extension extends \Bolt\BaseExtension
             } catch (\Doctrine\DBAL\DBALException $e) {
                 // Oops. User will get a warning on the dashboard about tables that need to be repaired.
                 $keys = array_keys($data);
+                if($formconfig['debugmode']==true) {
+                    \Dumper::dump("Couldn't insert data into table " . $formconfig['insert_into_table'] . ".");
+                    \Dumper::dump($data);
+                    \Dumper::dump($e);
+                }
                 $this->app['log']->add("SimpleForms could not insert data into table". $formconfig['insert_into_table'] . ' ('.join(', ', $keys).') - check if the table exists.', 3);
                 echo "Couldn't insert data into table " . $formconfig['insert_into_table'] . ".";
             }
