@@ -37,6 +37,7 @@ General settings
  - `testmode: true` - Sets a global testmode, you can use this to for development if you do not want other people to be bothered by
     endless testing emails. If you set this value to `true` all email will be sent to the `testmode_recipient` and all other
     recipient and cc addresses will be ignored. The default value is false.
+ - `debugmode: true` - Sets a global debugmode, the form will output a lot of internal debug information you can use this to for development
  - `testmode_recipient: info@example.com` - The email where all test emails should go.
 
 **Tip**: If you want to copy one of the template files, you should remember to leave out the `assets/` part. For

@@ -266,7 +266,6 @@ class Extension extends \Bolt\BaseExtension
         if ($formconfig['debugmode']==true) {
             \Dumper::dump('Building '.$formname);
             \Dumper::dump($formconfig);
-            //\Dumper::dump($this->app['paths']);
         }
 
         $message = "";
@@ -324,7 +323,19 @@ class Extension extends \Bolt\BaseExtension
                             // If redirect_on_ok is set, redirect to that page when succesful.
                             if (!empty($formconfig['redirect_on_ok'])) {
                                 $redirectpage = $this->app['storage']->getContent($formconfig['redirect_on_ok']);
-                                return Lib::simpleredirect($redirectpage->link());
+                                if ($formconfig['debugmode']==true) {
+                                    \Dumper::dump('Redirecting '.$formconfig['redirect_on_ok']);
+                                    \Dumper::dump($redirectpage);
+                                    if($redirectpage) {
+                                        \Dumper::dump("Redirect link: ".$redirectpage->link());
+                                    } else {
+                                        \Dumper::dump("redirectpage is missing for ". $formname);
+                                    }
+                                } elseif($redirectpage) {
+                                    return Lib::simpleredirect($redirectpage->link());
+                                } else {
+                                    \Dumper::dump("redirectpage is missing for ". $formname);
+                                }
                             }
                         }
                         else {
@@ -371,8 +382,6 @@ class Extension extends \Bolt\BaseExtension
         if($formconfig['debugmode']==true) {
             \Dumper::dump('Processing '.$formname);
             \Dumper::dump($formconfig);
-            // This yields a Fatal Error: "FormBuilder methods cannot be accessed anymore once the builder is turned into a FormConfigInterface instance."
-            //\Dumper::dump($form);
             \Dumper::dump($data);
             \Dumper::dump($this->app['request']->files);
         }
@@ -413,26 +422,34 @@ class Extension extends \Bolt\BaseExtension
                             // add the values to the formconfig in case we want to see this later
                             $formconfig['from_email'] = $tmp_email;
                             $formconfig['from_name'] = $tmp_name;
-                            // \Dumper::dump('Overriding from_email for '.$formname . ' with '. $tmp_name . ' <'. $tmp_email.'>');
+                            if($formconfig['debugmode']==true) {
+                                \Dumper::dump('Overriding from_email for '.$formname . ' with '. $tmp_name . ' <'. $tmp_email.'>');
+                            }
                             break;
                         case 'to_email':
                             // add another recipient
                             // add the values to the formconfig in case we want to see this later
                             $formconfig['recipient_email'] = $tmp_email;
                             $formconfig['recipient_name'] = $tmp_name;
-                            // \Dumper::dump('Overriding recipient_email for '.$formname . ' with '. $tmp_name . ' <'. $tmp_email.'>');
+                            if($formconfig['debugmode']==true) {
+                                \Dumper::dump('Overriding recipient_email for '.$formname . ' with '. $tmp_name . ' <'. $tmp_email.'>');
+                            }
                             break;
                         case 'cc_email':
                             // add another carbon copy recipient
                             $formconfig['recipient_cc_email'] = $tmp_email;
                             $formconfig['recipient_cc_name'] = $tmp_name;
-                            // \Dumper::dump('Overriding recipient_cc_email for '.$formname . ' with '. $tmp_name . ' <'. $tmp_email.'>');
+                            if($formconfig['debugmode']==true) {
+                                \Dumper::dump('Overriding recipient_cc_email for '.$formname . ' with '. $tmp_name . ' <'. $tmp_email.'>');
+                            }
                             break;
                         case 'bcc_email':
                             // add another blind carbon copy recipient
                             $formconfig['recipient_bcc_email'] = $tmp_email;
                             $formconfig['recipient_bcc_name'] = $tmp_name;
-                            // \Dumper::dump('Overriding recipient_bcc_email for '.$formname . ' with '. $tmp_name . ' <'. $tmp_email.'>');
+                            if($formconfig['debugmode']==true) {
+                                \Dumper::dump('Overriding recipient_bcc_email for '.$formname . ' with '. $tmp_name . ' <'. $tmp_email.'>');
+                            }
                             break;
                     }
                 } elseif(is_array($value)) {
