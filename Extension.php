@@ -619,8 +619,8 @@ class Extension extends \Bolt\BaseExtension
         // set the default recipient for this form
         if (!empty($formconfig['recipient_email'])) {
             $sendToEmailsArray = explode(',', $formconfig['recipient_email']);
-            foreach ($sendToEmailsArray as $k => &$v){
-                $v = trim($v);
+            foreach ($sendToEmailsArray as &$emailAddress){
+                $emailAddress = trim($emailAddress);
             }
             $message->setTo(array_fill_keys($sendToEmailsArray, $formconfig['recipient_name']));
             $this->app['log']->add('Set Recipient for '. $formname . ' to '. $formconfig['recipient_email'], 3);
@@ -656,16 +656,16 @@ class Extension extends \Bolt\BaseExtension
             // only add other recipients when not in testmode
             if(!empty($formconfig['recipient_cc_email']) && $formconfig['recipient_email']!=$formconfig['recipient_cc_email']) {
                 $sendToEmailsArray = explode(',', $formconfig['recipient_cc_email']);
-                foreach ($sendToEmailsArray as $k => &$v){
-                    $v = trim($v);
+                foreach ($sendToEmailsArray as &$emailAddress){
+                    $emailAddress = trim($emailAddress);
                 }
                 $message->setCc(array_fill_keys($sendToEmailsArray, $formconfig['recipient_cc_email']));
                 $this->app['log']->add('Added Cc for '. $formname . ' to '. $formconfig['recipient_cc_email'], 3);
             }
             if(!empty($formconfig['recipient_bcc_email']) && $formconfig['recipient_email']!=$formconfig['recipient_bcc_email']) {
                 $sendToEmailsArray = explode(',', $formconfig['recipient_bcc_email']);
-                foreach ($sendToEmailsArray as $k => &$v){
-                    $v = trim($v);
+                foreach ($sendToEmailsArray as &$emailAddress){
+                    $emailAddress = trim($emailAddress);
                 }
                 $message->setCc(array_fill_keys($sendToEmailsArray, $formconfig['recipient_bcc_email']));
                 $this->app['log']->add('Added Bcc for '. $formname . ' to '. $formconfig['recipient_bcc_email'], 3);
