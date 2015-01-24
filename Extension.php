@@ -585,6 +585,58 @@ class Extension extends \Bolt\BaseExtension
                 echo "Couldn't insert data into table " . $formconfig['insert_into_table'] . ".";
             }
         }
+        
+        // Attempt to insert the data into a CSV file, if specified..
+        if (!empty($formconfig['insert_into_csv'])) {
+            // Look for file from root of site installation.
+            // Allow user to define where to put, e.g. "../" in pre-public folder or in "/files/". W/E.
+            try {
+                $fp = fopen(dirname(__FILE__) . '/../../../../' . $formconfig['insert_into_csv'], 'a');
+                if ($fp) {
+                    fputcsv($fp, $data); 
+                }
+                fclose($fp);
+            } catch (\Doctrine\DBAL\DBALException $e) {
+                if($formconfig['debugmode']==true) {
+                    \Dumper::dump("Couldn't insert data into CSV or create file " . $formconfig['insert_into_csv'] . ".");
+                    \Dumper::dump($data);
+                    \Dumper::dump($e);
+                }
+                $this->app['log']->add("SimpleForms could not insert data into or create CSV file: ". $formconfig['insert_into_csv'], 3);
+                echo 'Oops something went wrong with CSVs. Make sure one exists.';
+            }
+        }
+        
+        // Attempt to send the data to a Pardot FormHandler (URL), if specified..
+        if (!empty($formconfig['send_to_pardot'])) {
+            $fields_string = '';
+            foreach($data as $key=>$value) { 
+              $fields_string .= $key.'='.$value.'&'; // Form query string. 
+            }
+            rtrim($fields_string, '&'); // Remove last one.
+            
+            try {
+                $ch = curl_init();
+                curl_setopt($ch,CURLOPT_URL, $formconfig['send_to_pardot']);
+                curl_setopt($ch,CURLOPT_POST, count($data));
+                curl_setopt($ch,CURLOPT_POSTFIELDS, $fields_string);
+
+                //execute post
+                $result = curl_exec($ch);
+                if ($result == FALSE){ // Oops something went wrong. Probably improper FormHandler URL or Pardot config.
+                    \Dumper::dump("Couldn't send data over cURL to Pardot. Make sure you are using the correct FormHandler URL and the Pardot FormHandler is properly configured.");
+                    $this->app['log']->add("Couldn't send data over cURL to Pardot. Make sure you are using the correct FormHandler URL and the Pardot FormHandler is properly configured.", 3);
+                }
+            } catch (\Doctrine\DBAL\DBALException $e) {
+                if($formconfig['debugmode']==true) {
+                    \Dumper::dump("Couldn't execute cURL to send data to Pardot. Make sure cURL is working.");
+                    \Dumper::dump($data);
+                    \Dumper::dump($e);
+                }
+                $this->app['log']->add("Couldn't execute cURL to send data to Pardot. Make sure cURL is working.", 3);
+            }
+            curl_close($ch);
+        }
 
         $mailhtml = $this->app['render']->render($formconfig['mail_template'], array(
             'form' =>  $data,
