@@ -26,6 +26,17 @@ class Extension extends \Bolt\BaseExtension
         return Extension::NAME;
     }
 
+    /**
+     * Allow users to place {{ simpleforms() }} tags into content, if
+     * `allowtwig: true` is set in the contenttype.
+     *
+     * @return boolean
+     */
+    public function isSafe()
+    {
+        return true;
+    }
+
     public function initialize()
     {
         if ($this->app['config']->getWhichEnd() == 'frontend') {

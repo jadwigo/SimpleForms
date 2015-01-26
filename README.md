@@ -9,6 +9,11 @@ with the name of the form to insert:
 With SimpleForms you create forms, by defining them in the `extensions/SimpleForms.yml`-file. The file has some general settings, 
 plus a section with fields for each different form.
 
+License
+-------
+
+Simple Forms is released under the open source [MIT-license](http://opensource.org/licenses/mit-license.php).
+
 General settings
 ----------------
 
