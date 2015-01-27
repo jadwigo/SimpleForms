@@ -282,7 +282,7 @@ myformname:
 </pre>
 
 
-Save to database:
+Save to database, CSV, and/or Pardot:
 -----------------
 
 There is an option to keep a logfile in the database of all form submissions.
@@ -316,6 +316,10 @@ CREATE TABLE `notifications` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 </pre>
+
+You may also save data into a CSV file. Just like the `insert_into_table` field, create a field for `insert_into_csv` and specify a filename of file you would like entries appended to. If file doesn't exist, SimpleForms will attempt to create it for you. The CSV file is attempted to be created at the root of your Bolt (2.0) installation, however, you can attempt to save it below the root (e.g. `../myCSV.csv`) or in a subdirectory.
+
+If you use Pardot, you can also setup a pardot FormHandler and then assign its URL to a `send_to_pardot` field. Data will be sent through a cURL request. Make sure to use the same FormHandler URL type - HTTP or HTTPS (TLS/SSL) - as used on your form page.
 
 
 special log fields
