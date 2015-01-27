@@ -37,7 +37,6 @@ class Extension extends \Bolt\BaseExtension
         return true;
     }
 
-
     public function initialize()
     {
         if ($this->app['config']->getWhichEnd() == 'frontend') {
