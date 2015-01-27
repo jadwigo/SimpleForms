@@ -58,8 +58,15 @@ The default file has two forms defined, namely 'contact' and 'demo'. The structu
 
 <pre>
 myformname:
-  recipient_email: info@example.org
-  recipient_name: Info
+  recipients: 
+    - 
+      name: Info
+      email: info@example.org
+    - 
+      name: Sales 
+      email: sales@example.org
+  recipient_cc_email: john@example.org
+  recipient_cc_name: John
   mail_subject: "[Simpleforms] Contact from site"
   fields:
     fieldname:
@@ -73,9 +80,10 @@ myformname:
 
 Each form has a name, which is used to insert the correct form in your templates. For example, if you've named your
 form `myformname`, as in the example above, you can insert the form in your templates using
-`{{ simpleform('myformname') }}`. Use the `recipient_email` and `recipient_info` fields to set the recipients of the
-emails. Use the `mail_subject` value to set the subject of the confirmation emails. The optional `button_text` can be
-used to override the global setting for the text on the 'send' button.
+`{{ simpleform('myformname') }}`. Use the `recipient_email` and `recipient_name` fields to set the recipients of the
+emails. Additionally, to set a number of recipient emails (or CC/BCC recipients), can create a list of `email` and 
+`name` sets like in above example under `recipients`, `recipients_cc`, and/or `recipients_bcc`; if both list and the `recipient_email` and `recipient_name` are present, the latter will be prepended as a name & email pair to this list. Use the `mail_subject` value to set the subject of the confirmation emails. The 
+optional `button_text` can be used to override the global setting for the text on the 'send' button.
 
 Each of the 'General settings' mentioned above can be overridden for a specific form. So, you can create forms that use
 different templates and different messages.
@@ -274,8 +282,10 @@ myformname:
 </pre>
 
 
-Save to database:
+Save to database, CSV, and/or Pardot:
 -----------------
+
+**SQL Database**
 
 There is an option to keep a logfile in the database of all form submissions.
 For this log you need to make a table with columns named after the fieldnames in the form and set the `insert_into_table`
@@ -308,6 +318,14 @@ CREATE TABLE `notifications` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 </pre>
+
+**CSV File**
+
+You may also save data into a CSV file. Just like the `insert_into_table` field, create a field for `insert_into_csv` and specify a filename of file you would like entries appended to. If file doesn't exist, SimpleForms will attempt to create it for you. The CSV file is attempted to be created at the root of your Bolt (2.0) installation, however, you can attempt to save/use a file below the root (e.g. `../myCSV.csv`) or in a subdirectory.
+
+**Pardot**
+
+If you use Pardot, you can also setup a pardot FormHandler (see Pardot documentation) for your form and then assign its URL to a `send_to_pardot` field. In the Pardot FormHandler configuration, fields must be correctly mapped from field names in your form's YAML configuration to Pardot fields. Ensure that fields which you set to be required in Pardot are also required in the SimpleForm config. Form data will be transmitted through a cURL request. Make sure to use the same FormHandler URL type - HTTP or HTTPS (TLS/SSL -- preferred) - as used on your form page.
 
 
 special log fields
