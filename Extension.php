@@ -25,7 +25,7 @@ class Extension extends \Bolt\BaseExtension
     {
         return Extension::NAME;
     }
-    
+
     /**
      * Allow users to place {{ simpleforms() }} tags into content, if
      * `allowtwig: true` is set in the contenttype.
@@ -584,7 +584,6 @@ class Extension extends \Bolt\BaseExtension
             \Dumper::dump('Prepared files for '.$formname);
             \Dumper::dump($data);
         }
-        
 
         // Attempt to insert the data into a table, if specified..
         if (!empty($formconfig['insert_into_table'])) {
