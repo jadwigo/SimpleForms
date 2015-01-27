@@ -81,10 +81,9 @@ myformname:
 Each form has a name, which is used to insert the correct form in your templates. For example, if you've named your
 form `myformname`, as in the example above, you can insert the form in your templates using
 `{{ simpleform('myformname') }}`. Use the `recipient_email` and `recipient_name` fields to set the recipients of the
-emails. Alternatively, to set a number of recipient emails (or CC/BCC recipients), create a list of `email` and `name` sets 
-like in above example under `recipients`, `recipients_cc`, and/or `recipients_bcc`; a list of recipients will override a single 
-recipient. Use the `mail_subject` value to set the subject of the confirmation emails. The optional `button_text` can be
-used to override the global setting for the text on the 'send' button.
+emails. Additionally, to set a number of recipient emails (or CC/BCC recipients), can create a list of `email` and 
+`name` sets like in above example under `recipients`, `recipients_cc`, and/or `recipients_bcc`; if both list and the `recipient_email` and `recipient_name` are present, the latter will be prepended as a name & email pair to this list. Use the `mail_subject` value to set the subject of the confirmation emails. The 
+optional `button_text` can be used to override the global setting for the text on the 'send' button.
 
 Each of the 'General settings' mentioned above can be overridden for a specific form. So, you can create forms that use
 different templates and different messages.

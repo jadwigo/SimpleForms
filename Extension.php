@@ -25,7 +25,7 @@ class Extension extends \Bolt\BaseExtension
     {
         return Extension::NAME;
     }
-
+    
     /**
      * Allow users to place {{ simpleforms() }} tags into content, if
      * `allowtwig: true` is set in the contenttype.
@@ -396,6 +396,14 @@ class Extension extends \Bolt\BaseExtension
             \Dumper::dump($data);
             \Dumper::dump($this->app['request']->files);
         }
+        
+        // Check recipients arrays & push/convert single recipients to front of it.
+        if (empty($formconfig['recipients']))       $formconfig['recipients'] = array();
+        if (empty($formconfig['recipients_cc']))    $formconfig['recipients_cc'] = array();
+        if (empty($formconfig['recipients_bcc']))   $formconfig['recipients_bcc'] = array();
+        if (!empty($formconfig['recipient_email'])) array_unshift($formconfig['recipients'], array('email' => $formconfig['recipient_email'], 'name' => $formconfig['recipient_name']));
+        if (!empty($formconfig['recipient_cc_email'])) array_unshift($formconfig['recipients_cc'], array('email' => $formconfig['recipient_cc_email'], 'name' => $formconfig['recipient_cc_name']));
+        if (!empty($formconfig['recipient_bcc_email'])) array_unshift($formconfig['recipients_bcc'], array('email' => $formconfig['recipient_bcc_email'], 'name' => $formconfig['recipient_bcc_name']));
 
         // $data contains the posted data. For legibility, change boolean fields to "yes" or "no".
         foreach($data as $key => $value) {
@@ -440,38 +448,23 @@ class Extension extends \Bolt\BaseExtension
                         case 'to_email':
                             // add another recipient
                             // add the values to the formconfig in case we want to see this later
-                            if (!empty($formconfig['recipients'])) { 
-                                $formconfig['recipients'][] = array('name' => $tmp_name, 'email' => $tmp_email);
-                            } else {
-                                $formconfig['recipient_email'] = $tmp_email;
-                                $formconfig['recipient_name'] = $tmp_name;
-                            }
+                            $formconfig['recipients'][] = array('name' => $tmp_name, 'email' => $tmp_email);
                             if($formconfig['debugmode']==true) {
-                                \Dumper::dump('Overriding recipient_email for '.$formname . ' with '. $tmp_name . ' <'. $tmp_email.'>');
+                                \Dumper::dump('Adding to recipients for '.$formname . ' with '. $tmp_name . ' <'. $tmp_email.'>');
                             }
                             break;
                         case 'cc_email':
                             // add another carbon copy recipient
-                            if (!empty($formconfig['recipients_cc'])) { 
-                                $formconfig['recipients_cc'][] = array('name' => $tmp_name, 'email' => $tmp_email);
-                            } else {
-                                $formconfig['recipient_cc_email'] = $tmp_email;
-                                $formconfig['recipient_cc_name'] = $tmp_name;
-                            }
+                            $formconfig['recipients_cc'][] = array('name' => $tmp_name, 'email' => $tmp_email);
                             if($formconfig['debugmode']==true) {
-                                \Dumper::dump('Overriding recipient_cc_email for '.$formname . ' with '. $tmp_name . ' <'. $tmp_email.'>');
+                                \Dumper::dump('Adding to recipients_cc for '.$formname . ' with '. $tmp_name . ' <'. $tmp_email.'>');
                             }
                             break;
                         case 'bcc_email':
                             // add another blind carbon copy recipient
-                            if (!empty($formconfig['recipients_bcc'])) { 
-                                $formconfig['recipients_bcc'][] = array('name' => $tmp_name, 'email' => $tmp_email);
-                            } else {
-                                $formconfig['recipient_bcc_email'] = $tmp_email;
-                                $formconfig['recipient_bcc_name'] = $tmp_name;
-                            }
+                            $formconfig['recipients_bcc'][] = array('name' => $tmp_name, 'email' => $tmp_email);
                             if($formconfig['debugmode']==true) {
-                                \Dumper::dump('Overriding recipient_bcc_email for '.$formname . ' with '. $tmp_name . ' <'. $tmp_email.'>');
+                                \Dumper::dump('Adding to recipients_bcc for '.$formname . ' with '. $tmp_name . ' <'. $tmp_email.'>');
                             }
                             break;
                     }
@@ -673,24 +666,19 @@ class Extension extends \Bolt\BaseExtension
 
         if (!empty($formconfig['mail_subject'])) {
             $subject = $formconfig['mail_subject'];
-        }
-        else {
+        } else {
             $subject = '[SimpleForms] ' . $formname;
         }
 
         if (empty($formconfig['from_email'])) {
             if (!empty($formconfig['recipients'][0]['name'])) {
                 $formconfig['from_email'] = $formconfig['recipients'][0]['email'];
-            } else {
-                $formconfig['from_email'] = $formconfig['recipient_email'];
             }
         }
 
         if (empty($formconfig['from_name'])) {
             if (!empty($formconfig['recipients'][0]['name'])) {
                 $formconfig['from_name'] = $formconfig['recipients'][0]['name'];
-            } else {
-                $formconfig['from_name'] = $formconfig['recipient_name'];
             }
         }
 
@@ -708,9 +696,6 @@ class Extension extends \Bolt\BaseExtension
             }
             $message->setTo($sendToEmailsArray);
             $this->app['log']->add('Set Recipients for '. $formname . ' to '. implode(', ', array_keys($sendToEmailsArray)), 3);
-        } else if (!empty($formconfig['recipient_email'])) { // Fallback/Depr.
-            $message->setTo(array($formconfig['recipient_email'] => $formconfig['recipient_name']));
-            $this->app['log']->add('Set Recipient for '. $formname . ' to '. $formconfig['recipient_email'], 3);
         }
 
         // set the default sender for this form
@@ -725,18 +710,23 @@ class Extension extends \Bolt\BaseExtension
                 $message->attach($attachment);
             }
         }
+        
+        // utility lambda to grab email from set (array) of name & email
+        $getFromEmailSet = function($arrayOfEmailName, $property = 'email'){
+            return $arrayOfEmailName[$property];
+        };
 
         // check for testmode
         if($formconfig['testmode']==true) {
             // override recipient with debug recipient
-            $message->setTo(array($formconfig['testmode_recipient'] => $formconfig['recipient_name']));
+            $message->setTo(array($formconfig['testmode_recipient'] => $formconfig['recipients'][0]['name']));
 
             // do not add other cc and bcc addresses in testmode
-            if(!empty($formconfig['recipient_cc_email']) && $formconfig['recipient_email']!=$formconfig['recipient_cc_email']) {
-                $this->app['log']->add('Did not set Cc for '. $formname . ' to '. $formconfig['recipient_cc_email'] . ' (in testmode)', 3);
+            if(!empty($formconfig['recipients_cc']) && $formconfig['recipients']!=$formconfig['recipients_cc']) {
+                $this->app['log']->add('Did not set Cc for '. $formname . ' (in testmode)', 3);
             }
-            if(!empty($formconfig['recipient_bcc_email']) && $formconfig['recipient_email']!=$formconfig['recipient_bcc_email']) {
-                $this->app['log']->add('Did not set Bcc for '. $formname . ' to '. $formconfig['recipient_bcc_email'] . ' (in testmode)', 3);
+            if(!empty($formconfig['recipients_bcc']) && $formconfig['recipients']!=$formconfig['recipients_bcc']) {
+                $this->app['log']->add('Did not set Bcc for '. $formname . ' (in testmode)', 3);
             }
         }
         else {
@@ -744,28 +734,22 @@ class Extension extends \Bolt\BaseExtension
             if(!empty($formconfig['recipients_cc'])) {
                 $sendToEmailsArray = array();
                 foreach ($formconfig['recipients_cc'] as $emailEntry){
-                    if (!in_array($emailEntry, $formconfig['recipients'])){
+                    if (!in_array($emailEntry['email'], array_map($getFromEmailSet, $formconfig['recipients']))){
                         $sendToEmailsArray[$emailEntry['email']] = $emailEntry['name'];
                     }
                 }
                 $message->setCc($sendToEmailsArray);
                 $this->app['log']->add('Set CC for '. $formname . ' to '. implode(', ', array_keys($sendToEmailsArray)), 3);
-            } else if (!empty($formconfig['recipient_cc_email']) && $formconfig['recipient_email']!=$formconfig['recipient_cc_email']) {
-                $message->setCc(array($formconfig['recipient_cc_email'] => $formconfig['recipient_cc_name']));
-                $this->app['log']->add('Set CC for '. $formname . ' to '. $formconfig['recipient_cc_email'], 3);
             }
             if(!empty($formconfig['recipients_bcc'])) {
                 $sendToEmailsArray = array();
                 foreach ($formconfig['recipients_bcc'] as $emailEntry){
-                    if (!in_array($emailEntry, $formconfig['recipients'])){
+                    if (!in_array($emailEntry['email'], array_map($getFromEmailSet, $formconfig['recipients']))){
                         $sendToEmailsArray[$emailEntry['email']] = $emailEntry['name'];
                     }
                 }
                 $message->setBcc($sendToEmailsArray);
                 $this->app['log']->add('Added Bcc for '. $formname . ' to '. implode(', ', array_keys($sendToEmailsArray)), 3);
-            } else if (!empty($formconfig['recipient_bcc_email']) && $formconfig['recipient_email']!=$formconfig['recipient_bcc_email']) {
-                $message->setBcc(array($formconfig['recipient_bcc_email'] => $formconfig['recipient_bcc_name']));
-                $this->app['log']->add('Set BCC for '. $formname . ' to '. $formconfig['recipient_bcc_email'], 3);
             }
 
             // check for other email addresses to be added
@@ -780,11 +764,8 @@ class Extension extends \Bolt\BaseExtension
                             $tmp_name = $data[$values['use_with']];
                             if(!$tmp_name) {
                                 $tmp_name = $tmp_email;
-                            } else {
-                                $formconfig['recipient_name'] = $tmp_name;
-                            }
-                        }
-                        else {
+                            } 
+                        } else {
                             $tmp_name = $tmp_email;
                         }
                     }
@@ -814,26 +795,26 @@ class Extension extends \Bolt\BaseExtension
                             case 'to_email':
                                 // check if recipient name is something useful
                                 // if it is already set somewhere use that
-                                if(!isset($formconfig['recipient_name'])) {
-                                    $formconfig['recipient_name'] = $tmp_name;
+                                if(!isset($formconfig['recipients'][0]['name']) || empty($formconfig['recipients'][0]['name'])) {
+                                    $formconfig['recipients'][0]['name'] = $tmp_name;
                                 } else {
-                                    $tmp_name = $formconfig['recipient_name'];
+                                    $tmp_name = $formconfig['recipients'][0]['name'];
                                 }
+                                
                                 // add another recipient
-
                                 $message->addTo($tmp_email, $tmp_name);
                                 // add the values to the formconfig in case we want to see this later
-                                if (empty($formconfig['recipient_email'])) {
-                                    $formconfig['recipient_email'] = $tmp_email;
-                                }
+                                $formconfig['recipients'][] = array('name' => $tmp_name, 'email' => $tmp_email);
                                 break;
                             case 'cc_email':
                                 // add another carbon copy recipient
                                 $message->addCc($tmp_email, $tmp_name);
+                                $formconfig['recipients_cc'][] = array('name' => $tmp_name, 'email' => $tmp_email);
                                 break;
                             case 'bcc_email':
                                 // add another blind carbon copy recipient
                                 $message->addBcc($tmp_email, $tmp_name);
+                                $formconfig['recipients_bcc'][] = array('name' => $tmp_name, 'email' => $tmp_email);
                                 break;
                         }
                     }
@@ -844,17 +825,22 @@ class Extension extends \Bolt\BaseExtension
         // log the attempt
         $this->app['log']->add('Sending message '. $formname
                                . ' from '. $formconfig['from_email']
-                               . ' to '. $formconfig['recipient_email'], 3);
+                               . ' to '. implode(', ', array_map($getFromEmailSet, $formconfig['recipients'])), 3);
 
         $res = $this->app['mailer']->send($message);
 
         // log the result of the attempt
         if ($res) {
             if($formconfig['testmode']) {
-                $this->app['log']->add('Sent email from ' . $formname . ' to '. $formconfig['testmode_recipient'] . ' (in testmode) - ' . $formconfig['recipient_name'], 3);
+                $this->app['log']->add('Sent email from ' . $formname . ' to '. $formconfig['testmode_recipient'] . ' (in testmode)', 3);
             }
             else {
-                $this->app['log']->add('Sent email from ' . $formname . ' to '. $formconfig['recipient_email'] . ' - ' . $formconfig['recipient_name'], 3);
+                $this->app['log']->add('Sent email from ' . $formname . ' to '. implode(', ', array_map($getFromEmailSet, $formconfig['recipients'])) . ' - ' . implode(', ', array_map($getFromEmailSet, $formconfig['recipients'], array_fill(0, count($formconfig['recipients']), 'name'))), 3);
+            }
+            if($formconfig['debugmode']==true) {
+                \Dumper::dump('Recipients Below');
+                \Dumper::dump($formconfig['recipients']);
+                \Dumper::dump(array_map($getFromEmailSet, $formconfig['recipients']));
             }
         }
 
