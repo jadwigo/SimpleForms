@@ -641,7 +641,7 @@ class Extension extends \Bolt\BaseExtension
                 //execute post
                 $result = curl_exec($ch);
                 if ($result == FALSE){ // Oops something went wrong. Probably improper FormHandler URL or Pardot config.
-                    \Dumper::dump("Couldn't send data over cURL to Pardot. Make sure you are using the correct FormHandler URL and the Pardot FormHandler is properly configured.");
+                    echo "Couldn't send data over cURL to Pardot. Make sure you are using the correct FormHandler URL and the Pardot FormHandler is properly configured.";
                     $this->app['log']->add("Couldn't send data over cURL to Pardot. Make sure you are using the correct FormHandler URL and the Pardot FormHandler is properly configured.", 3);
                 }
             } catch (\Doctrine\DBAL\DBALException $e) {
