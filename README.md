@@ -248,7 +248,7 @@ The storage_location must be set for a field definition, and a writable director
 must be created inside your files directory.
 
 You can also set the storage location to 'false' and the files will be temporarily stored in your cache folder.
-Use this if you want to attach the files to your emails but do not weant to keep a long term storage for them.
+Use this if you want to attach the files to your emails but do not want to keep a long term storage for them.
 
 If you set the `attach_files` option in the form definition, uploaded files will be attached to the email.
 If you do not set `attach_files` you will only get a link in your email.
