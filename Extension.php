@@ -258,6 +258,13 @@ class Extension extends \Bolt\BaseExtension
      */
     public function simpleForm($formname = "", $with = array())
     {
+        
+        // Make sure that we allow a session cookie for pages with a form. If we don't, the 
+        // form's CSRF token will not work correctly. This might be a temporary fix, depending 
+        // on how we're going to solve the 'cookies in frontend'-issue.
+        // @see https://github.com/bolt/bolt/issues/3425
+        $this->app['config']->set('general/cookies_no_frontend', false);
+        
         $this->app['twig.loader.filesystem']->addPath(__DIR__);
 
         // Select which form to use..
