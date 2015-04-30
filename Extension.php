@@ -561,6 +561,8 @@ class Extension extends \Bolt\BaseExtension
                     else {
                         $data[$fieldname] = "Invalid upload, ignored ($originalname)";
                     }
+                } else {
+                    $data[$fieldname] = "No file uploaded";
                 }
             }
 
