@@ -196,10 +196,6 @@ class Extension extends \Bolt\BaseExtension
         if ($options['required']) {
             $options['constraints'][] = new Assert\NotBlank();
         }
-        
-        if(!empty($field['class']) && is_string($field['class'])) {
-            $options['cssclass'] = $field['class'];
-        }
 
         if (!empty($field['choices']) && is_array($field['choices'])) {
             // Make the keys more sensible.

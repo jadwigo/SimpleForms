@@ -10,7 +10,7 @@
         {{ form.vars.attr.prefix|raw }}
         <div class="simpleform-row
         {% if form.vars.attr.type is defined %} simpleform-{{ form.vars.attr.type }} {% endif %}
-        {% if form.cssclass is defined %} {{ form.cssclass }} {% endif %}
+        {% if form.vars.attr.class is defined %} {{ form.vars.attr.class }} {% endif %}
         ">
             {{ form_label(form) }}
             {{ form_errors(form) }}
