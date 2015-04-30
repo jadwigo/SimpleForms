@@ -175,7 +175,7 @@ class Extension extends \Bolt\BaseExtension
             $options['attr']['value'] = $value;
         }
 
-        if (is_array($field['data'])) {
+        if (!empty($field['data']) && is_array($field['data'])) {
             foreach ($field['data'] as $datakey => $datavalue) {
                 $options['attr']['data-'.$datakey] = $datavalue;
             }
