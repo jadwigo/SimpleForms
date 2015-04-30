@@ -104,10 +104,22 @@ class Extension extends \Bolt\BaseExtension
         }
     }
 
-    private function buildField($name, $field, $with = array()) {
+    private function buildField($name, $field, $with = array(), $formname = 'null') {
         $options = array();
         $options['required'] = false;
-
+        
+        // Select which form to use..
+        if (isset($this->config[$formname])) {
+            $formconfig = $this->config[$formname];
+        }
+        else {
+            // this should never happen
+            // initializing a field without a form is way out of spec
+            $this->app['log']->add('Attempting to set a form field without a form', 3);
+            $formconfig = $this->config;
+        }
+        
+        
         $mappings = array(
                 'label' => 'label',
                 'value' => 'attr:value',
@@ -303,7 +315,7 @@ class Extension extends \Bolt\BaseExtension
         $form = $this->app['form.factory']->createNamedBuilder($formname, 'form', null, array('csrf_protection' => $this->config['csrf']));
 
         foreach ($formconfig['fields'] as $name => $field) {
-            $options = $this->buildField($name, $field, $with);
+            $options = $this->buildField($name, $field, $with, $formname);
 
             // only add known fields with options to the form
             if($options) {
