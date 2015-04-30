@@ -9,6 +9,10 @@ with the name of the form to insert:
 With SimpleForms you create forms, by defining them in the `extensions/SimpleForms.yml`-file. The file has some general settings, 
 plus a section with fields for each different form.
 
+Installation
+------------
+The easiest way to install this extension is to go to "View/Install extensions" in the "Extra" menu in your bolt install, type " SimpleForms" into the search box and follow the instructions.
+
 License
 -------
 
