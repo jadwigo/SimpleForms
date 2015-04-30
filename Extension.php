@@ -291,8 +291,8 @@ class Extension extends \Bolt\BaseExtension
         }
 
         if ($formconfig['debugmode']==true) {
-            \Dumper::dump('Building '.$formname);
-            \Dumper::dump($formconfig);
+            dump('Building '.$formname);
+            dump($formconfig);
         }
 
         $message = "";
@@ -351,17 +351,17 @@ class Extension extends \Bolt\BaseExtension
                             if (!empty($formconfig['redirect_on_ok'])) {
                                 $redirectpage = $this->app['storage']->getContent($formconfig['redirect_on_ok']);
                                 if ($formconfig['debugmode']==true) {
-                                    \Dumper::dump('Redirecting '.$formconfig['redirect_on_ok']);
-                                    \Dumper::dump($redirectpage);
+                                    dump('Redirecting '.$formconfig['redirect_on_ok']);
+                                    dump($redirectpage);
                                     if($redirectpage) {
-                                        \Dumper::dump("Redirect link: ".$redirectpage->link());
+                                        dump("Redirect link: ".$redirectpage->link());
                                     } else {
-                                        \Dumper::dump("redirectpage is missing for ". $formname);
+                                        dump("redirectpage is missing for ". $formname);
                                     }
                                 } elseif($redirectpage) {
                                     return Lib::simpleredirect($redirectpage->link());
                                 } else {
-                                    \Dumper::dump("redirectpage is missing for ". $formname);
+                                    dump("redirectpage is missing for ". $formname);
                                 }
                             }
                         }
@@ -399,7 +399,7 @@ class Extension extends \Bolt\BaseExtension
         if(!$this->app['request']->request->has($formname)) {
             // we're not submitting this particular form
             if($formconfig['debugmode']==true) {
-                \Dumper::dump("we're not submitting this form: ". $formname);
+                dump("we're not submitting this form: ". $formname);
             }
             return;
         }
@@ -407,10 +407,10 @@ class Extension extends \Bolt\BaseExtension
         $data = $form->getData();
 
         if($formconfig['debugmode']==true) {
-            \Dumper::dump('Processing '.$formname);
-            \Dumper::dump($formconfig);
-            \Dumper::dump($data);
-            \Dumper::dump($this->app['request']->files);
+            dump('Processing '.$formname);
+            dump($formconfig);
+            dump($data);
+            dump($this->app['request']->files);
         }
 
         // $data contains the posted data. For legibility, change boolean fields to "yes" or "no".
@@ -450,7 +450,7 @@ class Extension extends \Bolt\BaseExtension
                             $formconfig['from_email'] = $tmp_email;
                             $formconfig['from_name'] = $tmp_name;
                             if($formconfig['debugmode']==true) {
-                                \Dumper::dump('Overriding from_email for '.$formname . ' with '. $tmp_name . ' <'. $tmp_email.'>');
+                                dump('Overriding from_email for '.$formname . ' with '. $tmp_name . ' <'. $tmp_email.'>');
                             }
                             break;
                         case 'to_email':
@@ -459,7 +459,7 @@ class Extension extends \Bolt\BaseExtension
                             $formconfig['recipient_email'] = $tmp_email;
                             $formconfig['recipient_name'] = $tmp_name;
                             if($formconfig['debugmode']==true) {
-                                \Dumper::dump('Overriding recipient_email for '.$formname . ' with '. $tmp_name . ' <'. $tmp_email.'>');
+                                dump('Overriding recipient_email for '.$formname . ' with '. $tmp_name . ' <'. $tmp_email.'>');
                             }
                             break;
                         case 'cc_email':
@@ -467,7 +467,7 @@ class Extension extends \Bolt\BaseExtension
                             $formconfig['recipient_cc_email'] = $tmp_email;
                             $formconfig['recipient_cc_name'] = $tmp_name;
                             if($formconfig['debugmode']==true) {
-                                \Dumper::dump('Overriding recipient_cc_email for '.$formname . ' with '. $tmp_name . ' <'. $tmp_email.'>');
+                                dump('Overriding recipient_cc_email for '.$formname . ' with '. $tmp_name . ' <'. $tmp_email.'>');
                             }
                             break;
                         case 'bcc_email':
@@ -475,7 +475,7 @@ class Extension extends \Bolt\BaseExtension
                             $formconfig['recipient_bcc_email'] = $tmp_email;
                             $formconfig['recipient_bcc_name'] = $tmp_name;
                             if($formconfig['debugmode']==true) {
-                                \Dumper::dump('Overriding recipient_bcc_email for '.$formname . ' with '. $tmp_name . ' <'. $tmp_email.'>');
+                                dump('Overriding recipient_bcc_email for '.$formname . ' with '. $tmp_name . ' <'. $tmp_email.'>');
                             }
                             break;
                     }
@@ -494,8 +494,8 @@ class Extension extends \Bolt\BaseExtension
         }
 
         if($formconfig['debugmode']==true) {
-            \Dumper::dump('Prepared data for '.$formname);
-            \Dumper::dump($data);
+            dump('Prepared data for '.$formname);
+            dump($data);
         }
 
         $fileSystem = new Filesystem;
@@ -592,8 +592,8 @@ class Extension extends \Bolt\BaseExtension
         }
 
         if($formconfig['debugmode']==true) {
-            \Dumper::dump('Prepared files for '.$formname);
-            \Dumper::dump($data);
+            dump('Prepared files for '.$formname);
+            dump($data);
         }
 
         // Attempt to insert the data into a table, if specified..
@@ -604,9 +604,9 @@ class Extension extends \Bolt\BaseExtension
                 // Oops. User will get a warning on the dashboard about tables that need to be repaired.
                 $keys = array_keys($data);
                 if($formconfig['debugmode']==true) {
-                    \Dumper::dump("Couldn't insert data into table " . $formconfig['insert_into_table'] . ".");
-                    \Dumper::dump($data);
-                    \Dumper::dump($e);
+                    dump("Couldn't insert data into table " . $formconfig['insert_into_table'] . ".");
+                    dump($data);
+                    dump($e);
                 }
                 $this->app['log']->add("SimpleForms could not insert data into table". $formconfig['insert_into_table'] . ' ('.join(', ', $keys).') - check if the table exists.', 3);
                 echo "Couldn't insert data into table " . $formconfig['insert_into_table'] . ".";
@@ -618,8 +618,8 @@ class Extension extends \Bolt\BaseExtension
             'config' => $formconfig));
 
         if($formconfig['debugmode']==true) {
-            \Dumper::dump('Mail html for '.$formname);
-            \Dumper::dump($mailhtml);
+            dump('Mail html for '.$formname);
+            dump($mailhtml);
         }
 
         if (!empty($formconfig['mail_subject'])) {
@@ -860,7 +860,7 @@ class Extension extends \Bolt\BaseExtension
         $sequence++;
 
         if($formconfig['debugmode']==true) {
-            \Dumper::dump('Get sequence for '.$formname . ' column: '. $column . ' - '. $sequence);
+            dump('Get sequence for '.$formname . ' column: '. $column . ' - '. $sequence);
         }
 
         return $sequence;
