@@ -392,6 +392,7 @@ class Extension extends \Bolt\BaseExtension
             }
         }
 
+        $use_ssl = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off');
         $formhtml = $this->app['render']->render($formconfig['template'], array(
             "submit" => "Send",
             "form" => $form->createView(),
@@ -399,7 +400,7 @@ class Extension extends \Bolt\BaseExtension
             "error" => $error,
             "sent" => $sent,
             "formname" => $formname,
-            "recaptcha_html" => ($this->config['recaptcha_enabled'] ? recaptcha_get_html($this->config['recaptcha_public_key']) : ''),
+            "recaptcha_html" => ($this->config['recaptcha_enabled'] ? recaptcha_get_html($this->config['recaptcha_public_key'], null, $use_ssl) : ''),
             "recaptcha_theme" => ($this->config['recaptcha_enabled'] ? $this->config['recaptcha_theme'] : ''),
             "button_text" => $formconfig['button_text']
         ));
