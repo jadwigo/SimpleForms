@@ -7,13 +7,13 @@
 
 {% block form_row %}
     {% spaceless %}
-        {{ form.vars.attr.prefix|raw }}
+        {{ form.vars.attr.prefix|default()|raw }}
         <div class="simpleform-row{% if form.vars.attr.type is defined %} simpleform-{{ form.vars.attr.type }} {% endif %}{% if form.vars.attr.class is defined %} {{ form.vars.attr.class }} {% endif %}">
             {{ form_label(form) }}
             {{ form_errors(form) }}
             {{ form_widget(form) }}
         </div>
-        {{ form.vars.attr.postfix|raw }}
+        {{ form.vars.attr.postfix|default()|raw }}
     {% endspaceless %}
 {% endblock form_row %}
 
