@@ -869,7 +869,7 @@ class Extension extends \Bolt\BaseExtension
 
             } catch (\Doctrine\DBAL\DBALException $e) {
                 // Oops. User will get a warning on the dashboard about tables that need to be repaired.
-                $this->app['log']->add("SimpleForms could not fetch next sequence number from table". $formconfig['insert_into_table'] . ' - check if the table exists.', 3);
+                $this->app['logger.system']->info("SimpleForms could not fetch next sequence number from table". $formconfig['insert_into_table'] . ' - check if the table exists.', array('event' => 'extensions'));
                 echo "Couldn't fetch next sequence number from table " . $formconfig['insert_into_table'] . ".";
             }
         }
