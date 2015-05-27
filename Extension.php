@@ -115,7 +115,7 @@ class Extension extends \Bolt\BaseExtension
         else {
             // this should never happen
             // initializing a field without a form is way out of spec
-            $this->app['log']->add('Attempting to set a form field without a form', 3);
+            $this->app['logger.system']->info("Attempting to set a form field without a form", array('event' => 'extensions'));
             $formconfig = $this->config;
         }
         
@@ -626,7 +626,8 @@ class Extension extends \Bolt\BaseExtension
                     dump($data);
                     dump($e);
                 }
-                $this->app['log']->add("SimpleForms could not insert data into table". $formconfig['insert_into_table'] . ' ('.join(', ', $keys).') - check if the table exists.', 3);
+                $errortxt = $formconfig['insert_into_table'] . ' ('.join(', ', $keys).')';
+                $this->app['logger.system']->info("SimpleForms could not insert data into table: {$errortxt} - check if the table exists", array('event' => 'extensions'));
                 // echo '<div class="fatal-error">' .$inserterror . '</div>';
             }
         }
@@ -664,13 +665,13 @@ class Extension extends \Bolt\BaseExtension
         // set the default recipient for this form
         if (!empty($formconfig['recipient_email'])) {
             $message->setTo(array($formconfig['recipient_email'] => $formconfig['recipient_name']));
-            $this->app['log']->add('Set Recipient for '. $formname . ' to '. $formconfig['recipient_email'], 3);
+            $this->app['logger.system']->info('Set Recipient for '. $formname . ' to '. $formconfig['recipient_email'], array('event' => 'extensions'));
         }
 
         // set the default sender for this form
         if (!empty($formconfig['from_email'])) {
             $message->setFrom(array($formconfig['from_email'] => $formconfig['from_name']));
-            $this->app['log']->add('Set Sender for '. $formname . ' to '. $formconfig['from_email'], 3);
+            $this->app['logger.system']->info('Set Sender for '. $formname . ' to '. $formconfig['from_email'], array('event' => 'extensions'));
         }
 
         // add attachments if enabled in config
@@ -687,21 +688,21 @@ class Extension extends \Bolt\BaseExtension
 
             // do not add other cc and bcc addresses in testmode
             if(!empty($formconfig['recipient_cc_email']) && $formconfig['recipient_email']!=$formconfig['recipient_cc_email']) {
-                $this->app['log']->add('Did not set Cc for '. $formname . ' to '. $formconfig['recipient_cc_email'] . ' (in testmode)', 3);
+                $this->app['logger.system']->info('Did not set Cc for '. $formname . ' to '. $formconfig['recipient_cc_email'] . ' (in testmode)', array('event' => 'extensions'));
             }
             if(!empty($formconfig['recipient_bcc_email']) && $formconfig['recipient_email']!=$formconfig['recipient_bcc_email']) {
-                $this->app['log']->add('Did not set Bcc for '. $formname . ' to '. $formconfig['recipient_bcc_email'] . ' (in testmode)', 3);
+                $this->app['logger.system']->info('Did not set Bcc for '. $formname . ' to '. $formconfig['recipient_bcc_email'] . ' (in testmode)', array('event' => 'extensions'));
             }
         }
         else {
             // only add other recipients when not in testmode
             if(!empty($formconfig['recipient_cc_email']) && $formconfig['recipient_email']!=$formconfig['recipient_cc_email']) {
                 $message->setCc($formconfig['recipient_cc_email']);
-                $this->app['log']->add('Added Cc for '. $formname . ' to '. $formconfig['recipient_cc_email'], 3);
+                $this->app['logger.system']->info('Added Cc for '. $formname . ' to '. $formconfig['recipient_cc_email'], array('event' => 'extensions'));
             }
             if(!empty($formconfig['recipient_bcc_email']) && $formconfig['recipient_email']!=$formconfig['recipient_bcc_email']) {
                 $message->setBcc($formconfig['recipient_bcc_email']);
-                $this->app['log']->add('Added Bcc for '. $formname . ' to '. $formconfig['recipient_bcc_email'], 3);
+                $this->app['logger.system']->info('Added Bcc for '. $formname . ' to '. $formconfig['recipient_bcc_email'], array('event' => 'extensions'));
             }
 
             // check for other email addresses to be added
@@ -778,19 +779,17 @@ class Extension extends \Bolt\BaseExtension
         }
 
         // log the attempt
-        $this->app['log']->add('Sending message '. $formname
-                               . ' from '. $formconfig['from_email']
-                               . ' to '. $formconfig['recipient_email'], 3);
+        $this->app['logger.system']->info('Sending message '. $formname . ' from '. $formconfig['from_email'] . ' to '. $formconfig['recipient_email'], array('event' => 'extensions'));
 
         $res = $this->app['mailer']->send($message);
 
         // log the result of the attempt
         if ($res) {
             if($formconfig['testmode']) {
-                $this->app['log']->add('Sent email from ' . $formname . ' to '. $formconfig['testmode_recipient'] . ' (in testmode) - ' . $formconfig['recipient_name'], 3);
+                $this->app['logger.system']->info('Sent email from ' . $formname . ' to '. $formconfig['testmode_recipient'] . ' (in testmode) - ' . $formconfig['recipient_name'], array('event' => 'extensions'));
             }
             else {
-                $this->app['log']->add('Sent email from ' . $formname . ' to '. $formconfig['recipient_email'] . ' - ' . $formconfig['recipient_name'], 3);
+                $this->app['logger.system']->info('Sent email from ' . $formname . ' to '. $formconfig['recipient_email'] . ' - ' . $formconfig['recipient_name'], array('event' => 'extensions'));
             }
         }
 
