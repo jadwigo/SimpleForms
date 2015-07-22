@@ -500,7 +500,7 @@ class Extension extends \Bolt\BaseExtension
                             $data[$key][$k] = $options[$v];
                         }
                     }
-                } elseif(isset($options[$value]) && $options[$value] != $value) {
+                } elseif(isset($options[$value]) && $options[$value] !== $value) {
                     $data[$key] = $options[$value];
                 }
 
