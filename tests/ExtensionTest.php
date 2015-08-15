@@ -1,8 +1,7 @@
 <?php
 
-namespace Bolt\Extension\Bolt\SimpleForms\Tests;
+namespace Bolt\Extension\Bolt\SimpleForms\tests;
 
-use Bolt\Extension\Bolt\SimpleForms\Extension;
 use Symfony\Component\HttpFoundation\Request;
 
 /**
@@ -88,5 +87,115 @@ class ExtensionTest extends AbstractSimpleFormsUnitTest
 
         $this->assertInstanceOf('\Twig_Markup', $html);
         $this->assertRegExp('#<p class="simpleform-message">Thanks! Your message has been sent.</p>#', (string) $html);
+    }
+
+    public function testSimpleFormPostMailSend()
+    {
+        $app = $this->getApp();
+        $extension = $this->getExtension($app);
+        $parameters = $this->getPostParameters();
+
+        $mailer = $this->getMock('\Swift_Mailer', array('send'), array($app['swiftmailer.transport']));
+        $mailer->expects($this->any())
+            ->method('send')
+            ->will($this->returnCallback(function ($message) {
+                    $message = $message->toString();
+                    \PHPUnit_Framework_Assert::assertRegExp('#Subject: Testing Email Subject Line#', $message);
+                    \PHPUnit_Framework_Assert::assertRegExp('#From: Lodewijk Evers <jadwigo@example.org>#', $message);
+                    \PHPUnit_Framework_Assert::assertRegExp('#To: Gawain Lynch <info@example.com>#', $message);
+                    \PHPUnit_Framework_Assert::assertRegExp('#Somebody used the form on#', $message);
+                    \PHPUnit_Framework_Assert::assertRegExp('#The posted data is as follows#', $message);
+                    \PHPUnit_Framework_Assert::assertRegExp('#name: Road Runner#', $message);
+                    \PHPUnit_Framework_Assert::assertRegExp('#email: road@runner.com#', $message);
+                    \PHPUnit_Framework_Assert::assertRegExp('#subject: Beep beep#', $message);
+                    \PHPUnit_Framework_Assert::assertRegExp('#message: Catch me if you can#', $message);
+                    \PHPUnit_Framework_Assert::assertRegExp('#pets: Puppies#', $message);
+                    \PHPUnit_Framework_Assert::assertRegExp('#newsletter: yes#', $message);
+                    \PHPUnit_Framework_Assert::assertRegExp('#signup: yes#', $message);
+                    \PHPUnit_Framework_Assert::assertRegExp('#Sent by SimpleForms#', $message);
+                }
+            ))
+        ;
+        $app['mailer'] = $mailer;
+
+        $app['request'] = Request::create('/', 'POST', $parameters);
+        $extension->simpleForm('test_simple_form');
+    }
+
+    public function testSimpleFormPostMailSendDebugOff()
+    {
+        $app = $this->getApp();
+        $extension = $this->getExtension($app);
+        $extension->config['testmode'] = false;
+        $parameters = $this->getPostParameters();
+
+        $mailer = $this->getMock('\Swift_Mailer', array('send'), array($app['swiftmailer.transport']));
+        $mailer->expects($this->any())
+            ->method('send')
+            ->will($this->returnCallback(function ($message) {
+                    $message = $message->toString();
+                    \PHPUnit_Framework_Assert::assertRegExp('#Subject: Testing Email Subject Line#', $message);
+                    \PHPUnit_Framework_Assert::assertRegExp('#From: Lodewijk Evers <jadwigo@example.org>#', $message);
+                    \PHPUnit_Framework_Assert::assertRegExp('#To: Gawain Lynch <gawain@example.com>#', $message);
+                    \PHPUnit_Framework_Assert::assertRegExp('#Cc: bob@example.org#', $message);
+                    \PHPUnit_Framework_Assert::assertRegExp('#Bcc: xiao@example.org#', $message);
+                }
+            ))
+        ;
+        $app['mailer'] = $mailer;
+
+        $app['request'] = Request::create('/', 'POST', $parameters);
+        $extension->simpleForm('test_simple_form');
+    }
+
+    public function testSimpleFormPostMailSendWithCallbacks()
+    {
+        $app = $this->getApp();
+        $extension = $this->getExtension($app);
+        $app['extensions.SimpleForms']->config['test_simple_form']['fields']['date'] = array('type' => 'date');
+        $app['extensions.SimpleForms']->config['test_simple_form']['fields']['ip'] = array('type' => 'ip');
+        $app['extensions.SimpleForms']->config['test_simple_form']['fields']['host'] = array('type' => 'remotehost');
+        $app['extensions.SimpleForms']->config['test_simple_form']['fields']['ua'] = array('type' => 'useragent');
+        $app['extensions.SimpleForms']->config['test_simple_form']['fields']['now'] = array('type' => 'timestamp');
+        $parameters = $this->getPostParameters();
+        $parameters['test_simple_form']['date'] = array(
+            'day' => 23,
+            'month' => 10,
+            'year'  => 2010
+        );
+
+        $mailer = $this->getMock('\Swift_Mailer', array('send'), array($app['swiftmailer.transport']));
+        $mailer->expects($this->any())
+            ->method('send')
+            ->will($this->returnCallback(function ($message) {
+                    $message = $message->toString();
+                    \PHPUnit_Framework_Assert::assertRegExp('#date: 2010-10-23#', $message);
+                    \PHPUnit_Framework_Assert::assertRegExp('#ip: 8.8.8.8#', $message);
+                    \PHPUnit_Framework_Assert::assertRegExp('#host: simpleforms.bolt.cm#', $message);
+                    \PHPUnit_Framework_Assert::assertRegExp('#ua: SimpleForms/2.X#', $message);
+                    \PHPUnit_Framework_Assert::assertRegExp('#now: [1-9]#', $message);
+                }
+            ))
+        ;
+        $app['mailer'] = $mailer;
+
+        $server = array(
+            'SERVER_NAME'          => 'localhost',
+            'SERVER_PORT'          => 80,
+            'HTTP_HOST'            => 'unittest.bolt.cm',
+            'HTTP_USER_AGENT'      => 'SimpleForms/2.X',
+            'HTTP_ACCEPT'          => 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'HTTP_ACCEPT_LANGUAGE' => 'en-us,en;q=0.5',
+            'HTTP_ACCEPT_CHARSET'  => 'ISO-8859-1,utf-8;q=0.7,*;q=0.7',
+            'REMOTE_ADDR'          => '8.8.8.8',
+            'REMOTE_HOST'          => 'simpleforms.bolt.cm',
+            'SCRIPT_NAME'          => 'SimpleForms.php',
+            'SCRIPT_FILENAME'      => __FILE__,
+            'SERVER_PROTOCOL'      => 'HTTP/1.1',
+            'REQUEST_TIME'         => 42,
+        );
+
+        $app['request'] = Request::create('/', 'POST', $parameters, array(), array(), $server);
+        $extension->simpleForm('test_simple_form');
     }
 }
