@@ -28,6 +28,12 @@
             "Bolt\\Extension\\Bolt\\SimpleForms\\" : ""
         }
     },
+    "autoload-dev" : {
+         "psr-4" : {
+            "Bolt\\Extension\\Bolt\\SimpleForms\\Tests\\" : "tests/",
+            "Bolt\\Tests\\" : "vendor/bolt/bolt/tests/phpunit/unit/"
+         }
+     },
     "extra": {
         "branch-alias": {
             "dev-master" : "2.0.*-dev"
