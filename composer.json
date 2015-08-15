@@ -18,6 +18,8 @@
             "homepage": "https://github.com/jadwigo"
         }
     ],
+    "minimum-stability" : "dev",
+    "prefer-stable" : true,
     "autoload": {
         "files": [
             "init.php"
