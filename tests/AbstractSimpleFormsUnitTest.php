@@ -141,4 +141,20 @@ abstract class AbstractSimpleFormsUnitTest extends BoltUnitTest
             ),
         );
     }
+
+    protected function getPostParameters()
+    {
+        return array(
+            'test_simple_form' => array(
+                'name'       => 'Road Runner',
+                'email'      => 'road@runner.com',
+                'subject'    => 'Beep beep',
+                'message'    => 'Catch me if you can',
+                'pets'       => 1,
+                'upload'     => null,
+                'newsletter' => 1,
+                'signup'     => 1,
+            )
+        );
+    }
 }

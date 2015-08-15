@@ -35,8 +35,10 @@ class ExtensionTest extends AbstractSimpleFormsUnitTest
 
         $app['request'] = Request::create('/');
 
-        $html = (string) $extension->simpleForm('test_simple_form');
+        $html = $extension->simpleForm('test_simple_form');
+        $this->assertInstanceOf('\Twig_Markup', $html);
 
+        $html = (string) $html;
         $this->assertRegExp('#<form action="\#" method="post" class="simpleform simpleform-test_simple_form" enctype="multipart/form-data">#', $html);
         $this->assertRegExp('#<div\W+id="test_simple_form"><div class="simpleform-row simpleform-text ">#', $html);
         $this->assertRegExp('#<label for="test_simple_form_name" class="required">Name</label>#', $html);
@@ -61,17 +63,30 @@ class ExtensionTest extends AbstractSimpleFormsUnitTest
         $this->assertRegExp('#<option value="4">I do not like animals</option></select>#', $html);
         $this->assertRegExp('#<div class="simpleform-row simpleform-file ">#', $html);
         $this->assertRegExp('#<label for="test_simple_form_upload">Upload your picture</label>#', $html);
-        $this->assertRegExp('#<input type="file"\W+id="test_simple_form_upload" name="test_simple_form[upload]" />#', $html);
+        $this->assertRegExp('#<input type="file"\W+id="test_simple_form_upload" name="test_simple_form\[upload\]" />#', $html);
         $this->assertRegExp('#<div class="simpleform-row simpleform-checkbox ">#', $html);
         $this->assertRegExp('#<label for="test_simple_form_newsletter">Newsletter</label>#', $html);
-        $this->assertRegExp('#<input type="checkbox"\W+id="test_simple_form_newsletter" name="test_simple_form[newsletter]" placeholder="Send me the newsletters" value="1" />#', $html);
+        $this->assertRegExp('#<input type="checkbox"\W+id="test_simple_form_newsletter" name="test_simple_form\[newsletter\]" placeholder="Send me the newsletters" value="1" />#', $html);
         $this->assertRegExp('#<label for="test_simple_form_newsletter" class="checkbox-placeholder">Send me the newsletters</label>#', $html);
         $this->assertRegExp('#<div class="simpleform-row simpleform-checkbox ">#', $html);
         $this->assertRegExp('#<label for="test_simple_form_signup">Agree to this</label>#', $html);
-        $this->assertRegExp('#<input type="checkbox"\W+id="test_simple_form_signup" name="test_simple_form[signup]" placeholder="Yes, of course I agree." value="1" />#', $html);
+        $this->assertRegExp('#<input type="checkbox"\W+id="test_simple_form_signup" name="test_simple_form\[signup\]" placeholder="Yes, of course I agree." value="1" />#', $html);
         $this->assertRegExp('#<label for="test_simple_form_signup" class="checkbox-placeholder">Yes, of course I agree.</label>#', $html);
         $this->assertRegExp('#<div class="simpleform-row simpleform-text "><label for="test_simple_form_button_text">Button text</label>#', $html);
-        $this->assertRegExp('#<input type="text"\W+id="test_simple_form_button_text" name="test_simple_form[button_text]" />#', $html);
+        $this->assertRegExp('#<input type="text"\W+id="test_simple_form_button_text" name="test_simple_form\[button_text\]" />#', $html);
         $this->assertRegExp('#<input type="submit" name="submit" value="Send" class="simpleform-submit" />#', $html);
+    }
+
+    public function testSimpleFormPostDefault()
+    {
+        $app = $this->getApp();
+        $extension = $this->getExtension($app);
+        $parameters = $this->getPostParameters();
+
+        $app['request'] = Request::create('/', 'POST', $parameters);
+        $html = $extension->simpleForm('test_simple_form');
+
+        $this->assertInstanceOf('\Twig_Markup', $html);
+        $this->assertRegExp('#<p class="simpleform-message">Thanks! Your message has been sent.</p>#', (string) $html);
     }
 }
