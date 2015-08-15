@@ -4,7 +4,6 @@ namespace Bolt\Extension\Bolt\SimpleForms\Tests;
 
 use Bolt\Extension\Bolt\SimpleForms\Extension;
 use Bolt\Tests\BoltUnitTest;
-use Symfony\Component\HttpFoundation\Request;
 
 /**
  * Base class for SimpleForms testing.
@@ -40,6 +39,106 @@ abstract class AbstractSimpleFormsUnitTest extends BoltUnitTest
             $app = $this->getApp();
         }
 
+        $this->setDefaultConfig($app['extensions.SimpleForms']);
+
         return $app['extensions.SimpleForms'];
+    }
+
+    /**
+     * @param Extension $extension
+     */
+    protected function setDefaultConfig(Extension $extension)
+    {
+        unset($extension->config['demo']);
+        unset($extension->config['contact']);
+        $extension->config['csrf'] = false;
+        $extension->config['test_simple_form'] = array(
+            'mail_subject'       => 'Testing Email Subject Line',
+            'from_email'         => 'jadwigo@example.org',
+            'from_name'          => 'Lodewijk Evers',
+            'recipient_email'    => 'gawain@example.org',
+            'recipient_name'     => 'Gawain Lynch',
+            'recipient_cc_email' => 'bob@example.org',
+            'recipient_cc_name'  => 'Bob den Otter',
+            'insert_into_table'  => 'bolt_simple_test_form',
+            'storage_location'   => 'test_uploads',
+            'attach_files'       => true,
+            'fields'             => array(
+                'name' => array(
+                    'type'        => 'text',
+                    'placeholder' => 'Name of the game is',
+                    'required'    => true,
+                ),
+                'email' => array(
+                    'type'        => 'email',
+                    'label'       => 'Your email address',
+                    'placeholder' => 'you@example.com',
+                    'required'    => true,
+                    'use_as'      => 'from_email',
+                    'use_with'    => 'name',
+                ),
+                'subject' => array(
+                    'type'        => 'text',
+                    'label'       => 'Other test subject',
+                    'placeholder' => 'You rang',
+                    'required'    => false,
+                    'class'       => 'wide',
+                    'maxlength'   => 30,
+                ),
+                'message' => array(
+                    'type'        => 'textarea',
+                    'required'    => true,
+                    'placeholder' => 'Once upon a time',
+                ),
+                'pets' => array(
+                    'type'        => 'choice',
+                    'label'       => 'What is your favourite type of pet',
+                    'required'    => true,
+                    'empty_value' => 'My favorite animals are',
+                    'choices'     => array(
+                        'Kittens',
+                        'Puppies',
+                        'Penguins',
+                        'Koala bears',
+                        "I do not like animals"
+                    ),
+                ),
+                'upload' => array(
+                    'type'     => 'file',
+                    'label'    => 'Upload your picture',
+                    'required' => false,
+                    'filetype' => array(
+                        'jpg',
+                        'gif',
+                        'tiff',
+                        'png',
+                        'pdf',
+                    ),
+                    'mimetype' => array(
+                        'application/pdf',
+                        'application/x-pdf',
+                        'image/tiff',
+                        'image/x-tiff',
+                        'image/png',
+                        'image/jpeg',
+                        'image/pjpeg',
+                        'image/gif'
+                    ),
+                ),
+                'newsletter' => array(
+                    'type'        => 'checkbox',
+                    'label'       => 'Newsletter',
+                    'placeholder' => 'Send me the newsletters',
+                    'required'    => false,
+                ),
+                'signup' => array(
+                    'type'        => 'checkbox',
+                    'label'       => 'Agree to this',
+                    'placeholder' => 'Yes, of course I agree.',
+                    'required'    => false,
+                ),
+                'button_text' => 'Send me away',
+            ),
+        );
     }
 }
