@@ -155,7 +155,7 @@ class Extension extends \Bolt\BaseExtension
             }
         }
 
-        if (in_array($field['type'], array("ip", "remotehost", "useragent", "timestamp"))) {
+        if (isset($field['type']) && in_array($field['type'], array("ip", "remotehost", "useragent", "timestamp"))) {
             // we're storing IP, host, useragent and timestamp later.
             return null;
         }
@@ -447,7 +447,7 @@ class Extension extends \Bolt\BaseExtension
             }
 
             // Save the choice label, not the submitted safe string value.
-            if ($formconfig['fields'][$key]['type'] == 'choice' && !empty($formconfig['fields'][$key]['choices'])) {
+            if (isset($formconfig['fields'][$key]['type']) && $formconfig['fields'][$key]['type'] == 'choice' && !empty($formconfig['fields'][$key]['choices'])) {
                 $field = $formconfig['fields'][$key];
                 $options = $field['choices'];
 
@@ -519,7 +519,7 @@ class Extension extends \Bolt\BaseExtension
 
             // Check if we have fields of type 'file'. If so, fetch them, and move them
             // to the designated folder.
-            if ($fieldvalues['type'] == "file") {
+            if (isset($fieldvalues['type']) && $fieldvalues['type'] == "file") {
                 if (empty($formconfig['storage_location']) && $formconfig['attach_files']===false) {
                     die("You must set the storage_location in the field $fieldname if you do not use attachments.");
                 }
@@ -544,7 +544,7 @@ class Extension extends \Bolt\BaseExtension
                 }
 
                 $files = $this->app['request']->files->get($form->getName());
-                if(array_key_exists($fieldname, $files) && !empty($files[$fieldname])) {
+                if(!empty($files) && array_key_exists($fieldname, $files) && !empty($files[$fieldname])) {
                     $originalname = strtolower($files[$fieldname]->getClientOriginalName());
                     $filename = sprintf(
                         "%s-%s-%s.%s",
@@ -580,28 +580,30 @@ class Extension extends \Bolt\BaseExtension
                 }
             }
 
-            // Fields of type 'date' are \DateTime objects. Convert them to string, for sending in emails, etc.
-            if (($fieldvalues['type'] == "date") && ($data[$fieldname] instanceof \DateTime)) {
-                $format = isset($fieldvalues['format']) ? $fieldvalues['format'] : "Y-m-d";
-                $data[$fieldname] = $data[$fieldname]->format($format);
-            }
-            if ($fieldvalues['type'] == "ip") {
-                $data[$fieldname] = $this->getRemoteAddress();
-            }
-            if ($fieldvalues['type'] == "remotehost") {
-                $data[$fieldname] = $this->getRemoteHost();
-            }
-            if ($fieldvalues['type'] == "useragent") {
-                $data[$fieldname] = $this->getRemoteAgent();
-            }
-            if ($fieldvalues['type'] == "timestamp") {
-                $format = "%F %T";
-                $data[$fieldname] = strftime($format);
-            }
-            if ($fieldvalues['type'] == "choice" && $fieldvalues['multiple'] == true) {
-                // just to be sure
-                if (is_array( $data[$fieldname])) {
-                    $data[$fieldname] = implode(', ', $data[$fieldname]); // maybe <li> items in <ul>
+            if (isset($fieldvalues['type'])) {
+                // Fields of type 'date' are \DateTime objects. Convert them to string, for sending in emails, etc.
+                if (($fieldvalues['type'] == "date") && ($data[$fieldname] instanceof \DateTime)) {
+                    $format = isset($fieldvalues['format']) ? $fieldvalues['format'] : "Y-m-d";
+                    $data[$fieldname] = $data[$fieldname]->format($format);
+                }
+                if ($fieldvalues['type'] == "ip") {
+                    $data[$fieldname] = $this->getRemoteAddress();
+                }
+                if ($fieldvalues['type'] == "remotehost") {
+                    $data[$fieldname] = $this->getRemoteHost();
+                }
+                if ($fieldvalues['type'] == "useragent") {
+                    $data[$fieldname] = $this->getRemoteAgent();
+                }
+                if ($fieldvalues['type'] == "timestamp") {
+                    $format = "%F %T";
+                    $data[$fieldname] = strftime($format);
+                }
+                if ($fieldvalues['type'] == "choice" && $fieldvalues['multiple'] == true) {
+                    // just to be sure
+                    if (is_array( $data[$fieldname])) {
+                        $data[$fieldname] = implode(', ', $data[$fieldname]); // maybe <li> items in <ul>
+                    }
                 }
             }
 
