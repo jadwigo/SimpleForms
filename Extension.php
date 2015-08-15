@@ -36,7 +36,7 @@ class Extension extends \Bolt\BaseExtension
     {
         return true;
     }
-    
+
     /**
      * Let Bolt know this extension sends e-mails. The user will see a
      * notification on the dashboard if mail is not set up correctly.
@@ -107,7 +107,7 @@ class Extension extends \Bolt\BaseExtension
     private function buildField($name, $field, $with = array(), $formname = 'null') {
         $options = array();
         $options['required'] = false;
-        
+
         // Select which form to use..
         if (isset($this->config[$formname])) {
             $formconfig = $this->config[$formname];
@@ -118,8 +118,8 @@ class Extension extends \Bolt\BaseExtension
             $this->app['logger.system']->info("Attempting to set a form field without a form", array('event' => 'extensions'));
             $formconfig = $this->config;
         }
-        
-        
+
+
         $mappings = array(
                 'label' => 'label',
                 'value' => 'attr:value',
@@ -271,13 +271,13 @@ class Extension extends \Bolt\BaseExtension
      */
     public function simpleForm($formname = "", $with = array())
     {
-        
-        // Make sure that we allow a session cookie for pages with a form. If we don't, the 
-        // form's CSRF token will not work correctly. This might be a temporary fix, depending 
+
+        // Make sure that we allow a session cookie for pages with a form. If we don't, the
+        // form's CSRF token will not work correctly. This might be a temporary fix, depending
         // on how we're going to solve the 'cookies in frontend'-issue.
         // @see https://github.com/bolt/bolt/issues/3425
         $this->app['config']->set('general/cookies_no_frontend', false);
-        
+
         $this->app['twig.loader.filesystem']->addPath(__DIR__);
 
         // Select which form to use..
@@ -550,7 +550,7 @@ class Extension extends \Bolt\BaseExtension
                         "%s-%s-%s.%s",
                         date('Y-m-d'),
                         str_replace('upload', '', $fieldname),
-                        $this->app['randomgenerator']->generateString(12, 
+                        $this->app['randomgenerator']->generateString(12,
                             'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890'),
                         pathinfo($originalname, PATHINFO_EXTENSION)
                     );
