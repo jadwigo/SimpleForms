@@ -1,0 +1,835 @@
+<?php
+
+namespace Bolt\Extension\Bolt\SimpleForms;
+
+use Bolt\Application;
+use Bolt\Extension\Bolt\SimpleForms\Extension;
+use Bolt\Library as Lib;
+use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Validator\Constraints as Assert;
+
+/**
+ * SimpleForms legacy functionality class
+ */
+class SimpleFormsLegacy
+{
+    /** @var Application */
+    private $app;
+    /** @var array */
+    private $config;
+
+    private $global_fields;
+    private $text_labels;
+    private $labelsenabled;
+
+    public function __construct(Application $app)
+    {
+        $this->app = $app;
+        $this->config = $this->app[Extension::CONTAINER]->config;
+        $this->setConfig();
+    }
+
+    private function setConfig()
+    {
+        // fields that the global config should have
+        $this->global_fields = array(
+            'stylesheet',
+            'template',
+            'mail_template',
+            'message_ok',
+            'message_error',
+            'message_technical',
+            'button_text',
+            'attach_files',
+            'from_email',
+            'from_name',
+            'recipient_cc_email',
+            'recipient_cc_name',
+            'recipient_bcc_email',
+            'testmode',
+            'testmode_recipient',
+            'debugmode',
+            'insert_into_table'
+        );
+        // note that debugmode and insert_into_table are undocumented
+
+        // labels to translate
+        $this->text_labels = array(
+            'message_ok',
+            'message_error',
+            'message_technical',
+            'button_text',
+            'label',
+            'placeholder'
+        );
+
+        // Make sure CSRF is set, unless disabled on purpose
+        if (!isset($this->config['csrf'])) {
+            $this->config['csrf'] = true;
+        }
+
+        // Set the button text.
+        if (empty($this->config['button_text'])) {
+            $this->config['button_text'] = "Send";
+        }
+    }
+
+    /**
+     * Create a simple Form.
+     *
+     * @param string $formname
+     *
+     * @internal param string $name
+     *
+     * @return string
+     */
+    public function simpleForm($formname = "", $with = array())
+    {
+
+        // Make sure that we allow a session cookie for pages with a form. If we don't, the
+        // form's CSRF token will not work correctly. This might be a temporary fix, depending
+        // on how we're going to solve the 'cookies in frontend'-issue.
+        // @see https://github.com/bolt/bolt/issues/3425
+        $this->app['config']->set('general/cookies_no_frontend', false);
+
+        $this->app['twig.loader.filesystem']->addPath(__DIR__);
+
+        // Select which form to use..
+        if (isset($this->config[$formname])) {
+            $formconfig = $this->config[$formname];
+        } else {
+            return "Simpleforms notice: No form known by name '$formname'.";
+        }
+
+        // Set the mail configuration for empty fields to the global defaults if they exist
+        foreach ($this->global_fields as $configkey) {
+            if (!array_key_exists($configkey, $formconfig) && !empty($this->config[$configkey])) {
+                $formconfig[$configkey] = $this->config[$configkey];
+            } elseif (!array_key_exists($configkey, $formconfig) && empty($this->config[$configkey])) {
+                $formconfig[$configkey] = false;
+            }
+        }
+
+        // translate labels if labels extension exists
+        if ($this->labelsenabled) {
+            $this->labelfields($formconfig);
+        }
+
+        if ($formconfig['debugmode'] == true) {
+            dump('Building '.$formname);
+            dump($formconfig);
+        }
+
+        $message = "";
+        $error = "";
+        $sent = false;
+
+        $form = $this->app['form.factory']->createNamedBuilder($formname, 'form', null, array('csrf_protection' => $this->config['csrf']));
+
+        foreach ($formconfig['fields'] as $name => $field) {
+            $options = $this->buildField($name, $field, $with, $formname);
+
+            // only add known fields with options to the form
+            if ($options) {
+                $form->add($name, $options['attr']['type'], $options);
+            }
+        }
+
+        $form = $form->getForm();
+
+        require_once(__DIR__ . '/../recaptcha-php-1.11/recaptchalib.php');
+
+        if ($this->app['request']->isMethod('POST')) {
+            if (!$this->app['request']->request->has($formname)) {
+                // we're not submitting this particular form
+                if ($formconfig['debugmode'] == true) {
+                    $error .= "we're not submitting this form: ". $formname;
+                }
+                $sent = false;
+            } else {
+                // ok we're really submitting this form
+                $isRecaptchaValid = true; // to prevent ReCaptcha check if not enabled
+
+                if ($this->config['recaptcha_enabled']) {
+                    $isRecaptchaValid = false; // by Default
+
+                    $resp = recaptcha_check_answer($this->config['recaptcha_private_key'],
+                        $this->getRemoteAddress(),
+                        $_POST["recaptcha_challenge_field"],
+                        $_POST["recaptcha_response_field"]);
+
+                    $isRecaptchaValid = $resp->is_valid;
+                }
+
+                if ($isRecaptchaValid) {
+                    $form->bind($this->app['request']);
+
+                    if ($form->isValid()) {
+                        $res = $this->processForm($formconfig, $form, $formname);
+                        if ($res) {
+                            $message = $formconfig['message_ok'];
+                            $sent = true;
+
+                            // If redirect_on_ok is set, redirect to that page when succesful.
+                            if (!empty($formconfig['redirect_on_ok'])) {
+                                $redirectpage = $this->app['storage']->getContent($formconfig['redirect_on_ok']);
+                                if ($formconfig['debugmode'] == true) {
+                                    dump('Redirecting '.$formconfig['redirect_on_ok']);
+                                    dump($redirectpage);
+                                    if ($redirectpage) {
+                                        dump("Redirect link: ".$redirectpage->link());
+                                    } else {
+                                        dump("redirectpage is missing for ". $formname);
+                                    }
+                                } elseif ($redirectpage) {
+                                    return Lib::simpleredirect($redirectpage->link());
+                                } else {
+                                    dump("redirectpage is missing for ". $formname);
+                                }
+                            }
+                        } else {
+                            $error = $formconfig['message_technical'];
+                        }
+                    } else {
+                        $error = $formconfig['message_error'];
+                    }
+                } else {
+                    $error = $this->config['recaptcha_error_message'];
+                }
+            }
+        }
+
+        $use_ssl = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off');
+        $this->app['twig.loader.filesystem']->addPath(dirname(__DIR__));
+        $formhtml = $this->app['render']->render($formconfig['template'], array(
+            "submit"          => "Send",
+            "form"            => $form->createView(),
+            "message"         => $message,
+            "error"           => $error,
+            "sent"            => $sent,
+            "formname"        => $formname,
+            "recaptcha_html"  => ($this->config['recaptcha_enabled'] ? recaptcha_get_html($this->config['recaptcha_public_key'], null, $use_ssl) : ''),
+            "recaptcha_theme" => ($this->config['recaptcha_enabled'] ? $this->config['recaptcha_theme'] : ''),
+            "button_text"     => $formconfig['button_text']
+        ));
+
+        return new \Twig_Markup($formhtml, 'UTF-8');
+    }
+
+    private function buildField($name, $field, $with = array(), $formname = 'null')
+    {
+        $options = array();
+        $options['required'] = false;
+
+        // Select which form to use..
+        if (isset($this->config[$formname])) {
+            $formconfig = $this->config[$formname];
+        } else {
+            // this should never happen
+            // initializing a field without a form is way out of spec
+            $this->app['logger.system']->info("Attempting to set a form field without a form", array('event' => 'extensions'));
+            $formconfig = $this->config;
+        }
+
+        $mappings = array(
+                'label'        => 'label',
+                'value'        => 'attr:value',
+                'read_only'    => 'read_only',
+                'placeholder'  => 'attr:placeholder',
+                'class'        => 'attr:class',
+                'hint'         => 'attr:hint',
+                'required'     => 'required',
+                'prefix'       => 'attr:prefix',
+                'postfix'      => 'attr:postfix',
+                'empty_value'  => 'empty_value',
+                'maxlength'    => 'attr:maxlength',
+                'minlength'    => 'attr:minlength',
+                'autofocus'    => 'attr:autofocus',
+                'pattern'      => 'attr:pattern',
+                'autocomplete' => 'attr:autocomplete',
+                'expanded'     => 'expanded',
+                'multiple'     => 'multiple',
+            );
+
+        foreach ($mappings as $src => $dst) {
+            if (!empty($field[$src])) {
+                $value = $field[$src];
+                $dstPath = explode(':', $dst);
+                switch (count($dstPath)) {
+                    case 1:
+                        $options[$dstPath[0]] = $value; break;
+                    case 2:
+                        $options[$dstPath[0]][$dstPath[1]] = $value; break;
+                    default:
+                        throw \Exception("Invalid number of path components in $dstPath");
+                }
+            }
+        }
+
+        if (isset($field['type']) && in_array($field['type'], array("ip", "remotehost", "useragent", "timestamp"))) {
+            // we're storing IP, host, useragent and timestamp later.
+            return null;
+        }
+
+        if (!empty($field['default'])) {
+            $value = strip_tags($field['default']); // Note Symfony's form also takes care of escaping this.
+            $options['data'] = $value;
+        }
+
+        if (!empty($with[$name])) {
+            $value = strip_tags($with[$name]); // Note Symfony's form also takes care of escaping this.
+            $options['attr']['value'] = $value;
+        }
+
+        if (!empty($field['allow_override']) && !empty($_GET[$name])) {
+            $value = strip_tags($_GET[$name]); // Note Symfony's form also takes care of escaping this.
+            $options['attr']['value'] = $value;
+        }
+
+        if (!empty($field['data']) && is_array($field['data'])) {
+            foreach ($field['data'] as $datakey => $datavalue) {
+                $options['attr']['data-'.$datakey] = $datavalue;
+            }
+        }
+
+        if (!empty($field['role'])) {
+            switch ($field['role']) {
+                case 'sequence':
+                    // this is a sequential field
+                    $options['attr']['data-role'] = $field['role'];
+                    break;
+                default:
+                    // go away
+                    break;
+            }
+        }
+
+        if ($options['required']) {
+            $options['constraints'][] = new Assert\NotBlank();
+        }
+
+        if (!empty($field['choices']) && is_array($field['choices'])) {
+            // Make the keys more sensible.
+            $options['choices'] = array();
+            foreach ($field['choices'] as $key => $option) {
+                $options['choices'][ $key ] = $option;
+            }
+        }
+
+        // for optgroups
+        if (!empty($field['optgroups']) && is_array($field['optgroups'])) {
+            $options['choices'] = array();
+            foreach ($field['optgroups'] as $key => $value) {
+                $label   = $value['label'];
+                $choices = array();
+
+                if (is_array($value['choices'])) {
+                    foreach ($value['choices'] as $k => $v) {
+                        $choices[$k] = $v;
+                    }
+                }
+
+                $options['choices'][$label] = $choices;
+            }
+        }
+
+        // Make sure $field has a type, or the form will break.
+        if (empty($field['type'])) {
+            $type = "text";
+        } else {
+            $type = $field['type'];
+        }
+
+        if ($type === "email") {
+            $options['constraints'][] = new Assert\Email();
+        }
+        if ($type === "file") {
+            // if the field is file, make sure we set the accept properly.
+            $accept = array();
+
+            // Don't accept _all_ types. If nothing set in config.yml, set some sensible defaults.
+            if (empty($field['filetype'])) {
+                $field['filetype'] = array('jpg', 'jpeg', 'png', 'gif', 'pdf', 'txt', 'doc', 'docx');
+            }
+            foreach ($field['filetype'] as $ext) {
+                $accept[] = ".".$ext;
+            }
+            $options['attr']['accept'] = implode(",", $accept);
+
+            if (!empty($field['mimetype'])) {
+                $options['constraints'][] = new Assert\File(array(
+                            'mimeTypes'        => $field['mimetype'],
+                            'mimeTypesMessage' => $formconfig['mime_types_message'] . ' ' . implode(', ', $field['filetype']),
+                            ));
+            }
+        }
+
+        // Yeah, this feels a bit flaky, but I'm not sure how I can get
+        // the form type in the template in another way.
+        $options['attr']['type'] = $type;
+
+        return $options;
+    }
+
+    private function processForm($formconfig, $form, $formname)
+    {
+        if (!$this->app['request']->request->has($formname)) {
+            // we're not submitting this particular form
+            if ($formconfig['debugmode'] == true) {
+                dump("we're not submitting this form: ". $formname);
+            }
+            return;
+        }
+
+        $data = $form->getData();
+
+        if ($formconfig['debugmode'] == true) {
+            dump('Processing '.$formname);
+            dump($formconfig);
+            dump($data);
+            dump($this->app['request']->files);
+        }
+
+        // $data contains the posted data. For legibility, change boolean fields to "yes" or "no".
+        foreach ($data as $key => $value) {
+            // For legibility, change boolean fields to "yes" or "no".
+            if (gettype($value) == "boolean") {
+                $data[$key] = ($value ? "yes" : "no");
+            }
+
+            if (!empty($formconfig['fields'][$key]['role'])) {
+                $role = $formconfig['fields'][$key]['role'];
+
+                switch ($role) {
+                    case 'sequence':
+                        $data[$key] = $this->getSequence($formconfig, $form, $formname, $key);
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            // Save the choice label, not the submitted safe string value.
+            if (isset($formconfig['fields'][$key]['type']) && $formconfig['fields'][$key]['type'] == 'choice' && !empty($formconfig['fields'][$key]['choices'])) {
+                $field = $formconfig['fields'][$key];
+                $options = $field['choices'];
+
+                if (isset($field['use_as']) && in_array($field['use_as'], array('from_email', 'to_email', 'cc_email', 'bcc_email'))) {
+                    // do nothing because this field is be an email field
+                    // $data[$key] = array($options[$value] => $value);
+                    $tmp_email = $value;
+                    $tmp_name = ($options[$value] != $value)?$options[$value]:$value;
+
+                    switch ($field['use_as']) {
+                        case 'from_email':
+                            // set the special sender for this form
+                            // add the values to the formconfig in case we want to see this later
+                            $formconfig['from_email'] = $tmp_email;
+                            $formconfig['from_name'] = $tmp_name;
+                            if ($formconfig['debugmode'] == true) {
+                                dump('Overriding from_email for '.$formname . ' with '. $tmp_name . ' <'. $tmp_email.'>');
+                            }
+                            break;
+                        case 'to_email':
+                            // add another recipient
+                            // add the values to the formconfig in case we want to see this later
+                            $formconfig['recipient_email'] = $tmp_email;
+                            $formconfig['recipient_name'] = $tmp_name;
+                            if ($formconfig['debugmode'] == true) {
+                                dump('Overriding recipient_email for '.$formname . ' with '. $tmp_name . ' <'. $tmp_email.'>');
+                            }
+                            break;
+                        case 'cc_email':
+                            // add another carbon copy recipient
+                            $formconfig['recipient_cc_email'] = $tmp_email;
+                            $formconfig['recipient_cc_name'] = $tmp_name;
+                            if ($formconfig['debugmode'] == true) {
+                                dump('Overriding recipient_cc_email for '.$formname . ' with '. $tmp_name . ' <'. $tmp_email.'>');
+                            }
+                            break;
+                        case 'bcc_email':
+                            // add another blind carbon copy recipient
+                            $formconfig['recipient_bcc_email'] = $tmp_email;
+                            $formconfig['recipient_bcc_name'] = $tmp_name;
+                            if ($formconfig['debugmode'] == true) {
+                                dump('Overriding recipient_bcc_email for '.$formname . ' with '. $tmp_name . ' <'. $tmp_email.'>');
+                            }
+                            break;
+                    }
+                } elseif (is_array($value)) {
+                    // replace keys with values for display in the email
+                    foreach ($value as $k => $v) {
+                        if ($options[$v] != $v) {
+                            $data[$key][$k] = $options[$v];
+                        }
+                    }
+                } elseif (isset($options[$value]) && $options[$value] !== $value) {
+                    $data[$key] = $options[$value];
+                }
+            }
+        }
+
+        if ($formconfig['debugmode'] == true) {
+            dump('Prepared data for '.$formname);
+            dump($data);
+        }
+
+        $fileSystem = new Filesystem;
+
+        // Some fieldtypes (like 'date' and 'file') require post-processing.
+        foreach ($formconfig['fields'] as $fieldname => $fieldvalues) {
+
+            // Check if we have fields of type 'file'. If so, fetch them, and move them
+            // to the designated folder.
+            if (isset($fieldvalues['type']) && $fieldvalues['type'] == "file") {
+                if (empty($formconfig['storage_location']) && $formconfig['attach_files'] === false) {
+                    die("You must set the storage_location in the field $fieldname if you do not use attachments.");
+                } elseif (empty($formconfig['storage_location']) && $formconfig['attach_files'] == false) {
+                    // temporary files location will be a subdirectory of the cache
+                    $path = $this->app['resources']->getPath('cache');
+                    $linkpath = $this->app['resources']->getUrl('app') . 'cache';
+                } else {
+                    // files location will be a subdirectory of the files
+                    $path = $this->app['resources']->getPath('files') . '/' . $formconfig['storage_location'];
+                    $linkpath = $this->app['resources']->getUrl('files') . $formconfig['storage_location'];
+                }
+
+                // make sure the path is exists
+                if (!is_dir($path)) {
+                    $fileSystem->mkdir($path);
+                }
+
+                if (!is_writable($path)) {
+                    die("The path $path is not writable.");
+                }
+
+                $files = $this->app['request']->files->get($form->getName());
+                if (!empty($files) && array_key_exists($fieldname, $files) && !empty($files[$fieldname])) {
+                    $originalname = strtolower($files[$fieldname]->getClientOriginalName());
+                    $filename = sprintf(
+                        "%s-%s-%s.%s",
+                        date('Y-m-d'),
+                        str_replace('upload', '', $fieldname),
+                        $this->app['randomgenerator']->generateString(12,
+                            'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890'),
+                        pathinfo($originalname, PATHINFO_EXTENSION)
+                    );
+                    $link = sprintf("%s%s/%s", $this->app['resources']->getUrl('hosturl'), $linkpath, $filename);
+
+                    // Make sure the file is in the allowed extensions.
+                    if (in_array(pathinfo($originalname, PATHINFO_EXTENSION), $fieldvalues['filetype'])) {
+                        // If so, replace the file to designated folder.
+                        $files[$fieldname]->move($path, $filename);
+                        // by default we send a link
+                        $data[$fieldname] = $link;
+
+                        if ($formconfig['attach_files'] == 'true') {
+                            // if there is an attachment and no saved file on the server
+                            // only send the original name and the attachment
+                            if (empty($formconfig['storage_location'])) {
+                                $data[$fieldname] = $originalname ." ($link)";
+                            }
+                            $attachments[] = \Swift_Attachment::fromPath($link)->setFilename($originalname);
+                        }
+                    } else {
+                        $data[$fieldname] = "Invalid upload, ignored ($originalname)";
+                    }
+                } else {
+                    $data[$fieldname] = "No file uploaded";
+                }
+            }
+
+            if (isset($fieldvalues['type'])) {
+                // Fields of type 'date' are \DateTime objects. Convert them to string, for sending in emails, etc.
+                if (($fieldvalues['type'] == "date") && ($data[$fieldname] instanceof \DateTime)) {
+                    $format = isset($fieldvalues['format']) ? $fieldvalues['format'] : "Y-m-d";
+                    $data[$fieldname] = $data[$fieldname]->format($format);
+                }
+                if ($fieldvalues['type'] == "ip") {
+                    $data[$fieldname] = $this->getRemoteAddress();
+                }
+                if ($fieldvalues['type'] == "remotehost") {
+                    $data[$fieldname] = $this->getRemoteHost();
+                }
+                if ($fieldvalues['type'] == "useragent") {
+                    $data[$fieldname] = $this->getRemoteAgent();
+                }
+                if ($fieldvalues['type'] == "timestamp") {
+                    $format = "%F %T";
+                    $data[$fieldname] = strftime($format);
+                }
+                if ($fieldvalues['type'] == "choice" && $fieldvalues['multiple'] == true) {
+                    // just to be sure
+                    if (is_array($data[$fieldname])) {
+                        $data[$fieldname] = implode(', ', $data[$fieldname]); // maybe <li> items in <ul>
+                    }
+                }
+            }
+        }
+
+        if ($formconfig['debugmode'] == true) {
+            dump('Prepared files for '.$formname);
+            dump($data);
+        }
+
+        // Attempt to insert the data into a table, if specified..
+        if (!empty($formconfig['insert_into_table'])) {
+            try {
+                $this->app['db']->insert($formconfig['insert_into_table'], $data);
+            } catch (\Doctrine\DBAL\DBALException $e) {
+                // Oops. User will get a warning on the dashboard about tables that need to be repaired.
+                $keys = array_keys($data);
+                $inserterror = "Couldn't insert data into table " . $formconfig['insert_into_table'] . ".";
+
+                if ($formconfig['debugmode'] == true) {
+                    dump($inserterror);
+                    dump($data);
+                    dump($e);
+                }
+                $errortxt = $formconfig['insert_into_table'] . ' ('.join(', ', $keys).')';
+                $this->app['logger.system']->info("SimpleForms could not insert data into table: {$errortxt} - check if the table exists", array('event' => 'extensions'));
+                // echo '<div class="fatal-error">' .$inserterror . '</div>';
+            }
+        }
+
+        $mailhtml = $this->app['render']->render($formconfig['mail_template'], array(
+            'form'   => $data,
+            'config' => $formconfig));
+
+        if ($formconfig['debugmode'] == true) {
+            dump('Mail html for '.$formname);
+            dump($mailhtml);
+        }
+
+        if (!empty($formconfig['mail_subject'])) {
+            $subject = $formconfig['mail_subject'];
+        } else {
+            $subject = '[SimpleForms] ' . $formname;
+        }
+
+        if (empty($formconfig['from_email'])) {
+            $formconfig['from_email'] = $formconfig['recipient_email'];
+        }
+
+        if (empty($formconfig['from_name'])) {
+            $formconfig['from_name'] = $formconfig['recipient_name'];
+        }
+
+        // Compile the message..
+        $message = \Swift_Message::newInstance()
+            ->setSubject($subject)
+            ->setBody(strip_tags($mailhtml))
+            ->addPart($mailhtml, 'text/html');
+
+        // set the default recipient for this form
+        if (!empty($formconfig['recipient_email'])) {
+            $message->setTo(array($formconfig['recipient_email'] => $formconfig['recipient_name']));
+            $this->app['logger.system']->info('Set Recipient for '. $formname . ' to '. $formconfig['recipient_email'], array('event' => 'extensions'));
+        }
+
+        // set the default sender for this form
+        if (!empty($formconfig['from_email'])) {
+            $message->setFrom(array($formconfig['from_email'] => $formconfig['from_name']));
+            $this->app['logger.system']->info('Set Sender for '. $formname . ' to '. $formconfig['from_email'], array('event' => 'extensions'));
+        }
+
+        // add attachments if enabled in config
+        if (($formconfig['attach_files'] == 'true') && is_array($attachments)) {
+            foreach ($attachments as $attachment) {
+                $message->attach($attachment);
+            }
+        }
+
+        // check for testmode
+        if ($formconfig['testmode'] == true) {
+            // override recipient with debug recipient
+            $message->setTo(array($formconfig['testmode_recipient'] => $formconfig['recipient_name']));
+
+            // do not add other cc and bcc addresses in testmode
+            if (!empty($formconfig['recipient_cc_email']) && $formconfig['recipient_email'] != $formconfig['recipient_cc_email']) {
+                $this->app['logger.system']->info('Did not set Cc for '. $formname . ' to '. $formconfig['recipient_cc_email'] . ' (in testmode)', array('event' => 'extensions'));
+            }
+            if (!empty($formconfig['recipient_bcc_email']) && $formconfig['recipient_email'] != $formconfig['recipient_bcc_email']) {
+                $this->app['logger.system']->info('Did not set Bcc for '. $formname . ' to '. $formconfig['recipient_bcc_email'] . ' (in testmode)', array('event' => 'extensions'));
+            }
+        } else {
+            // only add other recipients when not in testmode
+            if (!empty($formconfig['recipient_cc_email']) && $formconfig['recipient_email'] != $formconfig['recipient_cc_email']) {
+                $message->setCc($formconfig['recipient_cc_email']);
+                $this->app['logger.system']->info('Added Cc for '. $formname . ' to '. $formconfig['recipient_cc_email'], array('event' => 'extensions'));
+            }
+            if (!empty($formconfig['recipient_bcc_email']) && $formconfig['recipient_email'] != $formconfig['recipient_bcc_email']) {
+                $message->setBcc($formconfig['recipient_bcc_email']);
+                $this->app['logger.system']->info('Added Bcc for '. $formname . ' to '. $formconfig['recipient_bcc_email'], array('event' => 'extensions'));
+            }
+
+            // check for other email addresses to be added
+            foreach ($formconfig['fields'] as $key => $values) {
+                if (isset($values['use_as']) && in_array($values['use_as'], array('to_email', 'from_email', 'cc_email', 'bcc_email'))) {
+                    $tmp_email = false;
+
+                    if ($values['type'] == "email" || $values['type'] == "hidden") {
+                        $tmp_email = $data[$key];
+
+                        if (isset($values['use_with'])) {
+                            $tmp_name = $data[$values['use_with']];
+                            if (!$tmp_name) {
+                                $tmp_name = $tmp_email;
+                            } else {
+                                $formconfig['recipient_name'] = $tmp_name;
+                            }
+                        } else {
+                            $tmp_name = $tmp_email;
+                        }
+                    } elseif ($values['type'] == "choice") {
+                        $tmp_email = $data[$key];
+                        if (array_key_exists($tmp_email, $formconfig['fields'][$key])) {
+                            $tmp_name = $formconfig['fields'][$key];
+                        } else {
+                            $tmp_name = $tmp_email;
+                        }
+                    }
+
+                    if ($tmp_email) {
+                        switch ($values['use_as']) {
+                            case 'from_email':
+                                // set the special sender for this form
+                                $message->setFrom(array($tmp_email => $tmp_name));
+                                // add the values to the formconfig in case we want to see this later
+                                if (empty($formconfig['from_email'])) {
+                                    $formconfig['from_email'] = $tmp_email;
+                                    if (!isset($formconfig['from_name'])) {
+                                        $formconfig['from_name'] = $tmp_name;
+                                    }
+                                }
+                                break;
+                            case 'to_email':
+                                // check if recipient name is something useful
+                                // if it is already set somewhere use that
+                                if (!isset($formconfig['recipient_name'])) {
+                                    $formconfig['recipient_name'] = $tmp_name;
+                                } else {
+                                    $tmp_name = $formconfig['recipient_name'];
+                                }
+                                // add another recipient
+
+                                $message->addTo($tmp_email, $tmp_name);
+                                // add the values to the formconfig in case we want to see this later
+                                if (empty($formconfig['recipient_email'])) {
+                                    $formconfig['recipient_email'] = $tmp_email;
+                                }
+                                break;
+                            case 'cc_email':
+                                // add another carbon copy recipient
+                                $message->addCc($tmp_email, $tmp_name);
+                                break;
+                            case 'bcc_email':
+                                // add another blind carbon copy recipient
+                                $message->addBcc($tmp_email, $tmp_name);
+                                break;
+                        }
+                    }
+                }
+            }
+        }
+
+        // log the attempt
+        $this->app['logger.system']->info('Sending message '. $formname . ' from '. $formconfig['from_email'] . ' to '. $formconfig['recipient_email'], array('event' => 'extensions'));
+
+        $res = $this->app['mailer']->send($message);
+
+        // log the result of the attempt
+        if ($res) {
+            if ($formconfig['testmode']) {
+                $this->app['logger.system']->info('Sent email from ' . $formname . ' to '. $formconfig['testmode_recipient'] . ' (in testmode) - ' . $formconfig['recipient_name'], array('event' => 'extensions'));
+            } else {
+                $this->app['logger.system']->info('Sent email from ' . $formname . ' to '. $formconfig['recipient_email'] . ' - ' . $formconfig['recipient_name'], array('event' => 'extensions'));
+            }
+        }
+
+        return $res;
+    }
+
+    /**
+     * Get the user's IP-address for logging, even if they're behind a non-trusted proxy.
+     * Note: these addresses can't be 'trusted', Use them for logging only.
+     *
+     * @return string
+     */
+    private function getRemoteAddress()
+    {
+        $server = $this->app['request']->server;
+        if ($server->has('HTTP_CLIENT_IP')) {
+            return $server->get('HTTP_CLIENT_IP');
+        }
+        if ($server->has('HTTP_X_FORWARDED_FOR')) {
+            return $server->get('HTTP_X_FORWARDED_FOR');
+        }
+        return $server->get('REMOTE_ADDR');
+    }
+
+    /**
+     * Get the user's remote hostname for logging.
+     * Ignore proxy stuff
+     * Note: these addresses can't be 'trusted', Use them for logging only.
+     *
+     * @return string
+     */
+    private function getRemoteHost()
+    {
+        $server = $this->app['request']->server;
+
+        $host = $server->get('REMOTE_HOST');
+        if ($host) {
+            return $host;
+        } else {
+            return '';
+        }
+    }
+
+    /**
+     * Get the user's user agent string for logging
+     * Note: these addresses can't be 'trusted', Use them for logging only.
+     *
+     * @return string
+     */
+    private function getRemoteAgent()
+    {
+        $server = $this->app['request']->server;
+        return $server->get('HTTP_USER_AGENT');
+    }
+
+    /**
+     * Get the next number from a sequence
+     *
+     * @return int
+     */
+    private function getSequence($formconfig, $form, $formname, $column)
+    {
+        $sequence = null;
+
+        // Attempt get the next sequence from a table, if specified..
+        if (!empty($formconfig['insert_into_table'])) {
+            try {
+                $query = sprintf(
+                    "SELECT MAX(%s) as max FROM %s",
+                    $column,
+                    $formconfig['insert_into_table']
+                );
+                $sequence = $this->app['db']->executeQuery($query)->fetchColumn();
+            } catch (\Doctrine\DBAL\DBALException $e) {
+                // Oops. User will get a warning on the dashboard about tables that need to be repaired.
+                $this->app['logger.system']->info("SimpleForms could not fetch next sequence number from table". $formconfig['insert_into_table'] . ' - check if the table exists.', array('event' => 'extensions'));
+                echo "Couldn't fetch next sequence number from table " . $formconfig['insert_into_table'] . ".";
+            }
+        }
+
+        $sequence++;
+
+        if ($formconfig['debugmode'] == true) {
+            dump('Get sequence for '.$formname . ' column: '. $column . ' - '. $sequence);
+        }
+
+        return $sequence;
+    }
+}
