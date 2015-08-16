@@ -137,6 +137,11 @@ class SimpleForms
                 ),
                 'constraints' => $this->getContraints($field),
             );
+
+            if ($newFields[$field]['type'] == 'choice') {
+                $newFields[$field]['options']['choices'] = $values['choices'];
+                $newFields[$field]['options']['multiple'] = isset($values['multiple']) ? $values['multiple'] : false;
+            }
         }
 
         return $newFields;
