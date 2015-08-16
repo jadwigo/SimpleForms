@@ -324,7 +324,7 @@ class Extension extends \Bolt\BaseExtension
 
         require_once('recaptcha-php-1.11/recaptchalib.php');
 
-        if ('POST' == $this->app['request']->getMethod()) {
+        if ($this->app['request']->isMethod('POST')) {
             if (!$this->app['request']->request->has($formname)) {
                 // we're not submitting this particular form
                 if ($formconfig['debugmode'] == true) {
