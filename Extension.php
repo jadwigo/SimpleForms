@@ -694,7 +694,7 @@ class Extension extends \Bolt\BaseExtension
 
             // check for other email addresses to be added
             foreach ($formconfig['fields'] as $key => $values) {
-                if (in_array($values['use_as'], array('to_email', 'from_email', 'cc_email', 'bcc_email'))) {
+                if (isset($values['use_as']) && in_array($values['use_as'], array('to_email', 'from_email', 'cc_email', 'bcc_email'))) {
                     $tmp_email = false;
 
                     if ($values['type'] == "email" || $values['type'] == "hidden") {
