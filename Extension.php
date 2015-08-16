@@ -515,12 +515,12 @@ class Extension extends \Bolt\BaseExtension
                     die("You must set the storage_location in the field $fieldname if you do not use attachments.");
                 } elseif (empty($formconfig['storage_location']) && $formconfig['attach_files'] == false) {
                     // temporary files location will be a subdirectory of the cache
-                    $path = BOLT_CACHE_DIR;
-                    $linkpath = $this->app['paths']['app'] . 'cache';
+                    $path = $this->app['resources']->getPath('cache');
+                    $linkpath = $this->app['resources']->getUrl('app') . 'cache';
                 } else {
                     // files location will be a subdirectory of the files
-                    $path = $this->app['paths']['filespath'] . "/" . $formconfig['storage_location'];
-                    $linkpath = $this->app['paths']['files'] . $formconfig['storage_location'];
+                    $path = $this->app['resources']->getPath('files') . '/' . $formconfig['storage_location'];
+                    $linkpath = $this->app['resources']->getUrl('files') . $formconfig['storage_location'];
                 }
 
                 // make sure the path is exists
@@ -543,7 +543,7 @@ class Extension extends \Bolt\BaseExtension
                             'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ01234567890'),
                         pathinfo($originalname, PATHINFO_EXTENSION)
                     );
-                    $link = sprintf("%s%s/%s", $this->app['paths']['hosturl'], $linkpath, $filename);
+                    $link = sprintf("%s%s/%s", $this->app['resources']->getUrl('hosturl'), $linkpath, $filename);
 
                     // Make sure the file is in the allowed extensions.
                     if (in_array(pathinfo($originalname, PATHINFO_EXTENSION), $fieldvalues['filetype'])) {
