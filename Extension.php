@@ -68,8 +68,28 @@ class Extension extends \Bolt\BaseExtension
     protected function getDefaultConfig()
     {
         return array(
-            'legacy'     => true,
-            'stylesheet' => '',
+            'legacy'                  => true,
+            'stylesheet'              => '',
+            'template'                => 'assets/simpleforms_form.twig',
+            'mail_template'           => 'assets/simpleforms_mail.twig',
+            'message_ok'              => 'Thanks! Your message has been sent.',
+            'message_error'           => 'There was an error in the form. Please check the form, and try again.',
+            'message_technical'       => 'There were some technical difficulties, so your message was not sent. We apologize for the inconvenience.',
+            'button_text'             => 'Send',
+            'recaptcha_enabled'       => false,
+            'recaptcha_public_key'    => '',
+            'recaptcha_private_key'   => '',
+            'recaptcha_error_message' => "The CAPTCHA wasn't entered correctly. Please try again.",
+            'recaptcha_theme'         => 'clean',
+            'csrf'                    => true,
+            'from_email'              => 'default@example.org',
+            'from_name'               => 'Default',
+            'recipient_cc_email'      => '',
+            'recipient_cc_name'       => '',
+            'recipient_bcc_email'     => '',
+            'recipient_bcc_name'      => '',
+            'testmode '               => true,
+            'testmode_recipient'      => 'info@example.com'
         );
     }
 }
