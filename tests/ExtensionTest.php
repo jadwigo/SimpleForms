@@ -135,8 +135,8 @@ class ExtensionTest extends AbstractSimpleFormsUnitTest
             ->will($this->returnCallback(function ($message) {
                     $message = $message->toString();
                     \PHPUnit_Framework_Assert::assertRegExp('#Subject: Testing Email Subject Line#', $message);
-                    \PHPUnit_Framework_Assert::assertRegExp('#From: Lodewijk Evers <jadwigo@example.org>#', $message);
-                    \PHPUnit_Framework_Assert::assertRegExp('#To: Gawain Lynch <gawain@example.com>#', $message);
+                    \PHPUnit_Framework_Assert::assertRegExp('#From: Road Runner <road@runner.com>#', $message);
+                    \PHPUnit_Framework_Assert::assertRegExp('#To: Gawain Lynch <gawain@example.org>#', $message);
                     \PHPUnit_Framework_Assert::assertRegExp('#Cc: bob@example.org#', $message);
                     \PHPUnit_Framework_Assert::assertRegExp('#Bcc: xiao@example.org#', $message);
                 }
