@@ -2,6 +2,8 @@
 
 namespace Bolt\Extension\Bolt\SimpleForms;
 
+use Symfony\Component\HttpFoundation\Request;
+use Bolt\Application;
 /**
  * Simple forms Extension for Bolt
  */
@@ -48,8 +50,23 @@ class Extension extends \Bolt\BaseExtension
                 $this->addCSS($this->config['stylesheet']);
             }
 
+            $this->app->before(array($this, 'before'));
+
             // Add Twig functions
             $this->addTwigFunction('simpleform', 'simpleForm');
+        }
+    }
+
+    /**
+     * Before filter.
+     *
+     * @param Request $request
+     */
+    public function before(Request $request)
+    {
+        if ($request->get('new') === 'true') {
+            // Allow dynamic switching of functionality with ?new=true in the URL
+            $this->config['legacy'] = false;
         }
     }
 
