@@ -55,7 +55,7 @@ class SimpleForms
 
         $this->app['boltforms']->makeForm($formname, 'form', $data, $options);
 
-        $fields = $this->config[$formname]['fields'];
+        $fields = $this->convertFormConfig($this->config[$formname]['fields']);
 
         // Add our fields all at once
         $this->app['boltforms']->addFieldArray($formname, $fields);
@@ -113,5 +113,59 @@ class SimpleForms
     {
         $this->boltFormsExt->config['debug']['enabled'] = $this->config['testmode'];
         $this->boltFormsExt->config['debug']['address'] = $this->config['testmode_recipient'];
+    }
+
+    /**
+     * Convert SimpleForms field configuration to Symfony/BoltForms style.
+     *
+     * @param array $fields
+     *
+     * @return array
+     */
+    protected function convertFormConfig(array $fields)
+    {
+        $newFields = array();
+        foreach ($fields as $field => $values) {
+            $newFields[$field]['type'] = isset($values['type']) ? $values['type'] : 'submit';
+
+            $newFields[$field]['options'] = array(
+                'required' => isset($values['required']) ? $values['required'] : false,
+                'label' => isset($values['label']) ? $values['label'] : null,
+                'attr' => array(
+                    'placeholder' => isset($values['placeholder']) ? $values['placeholder'] : null,
+                    'class' => isset($values['class']) ? $values['class'] : null,
+                ),
+                'constraints' => $this->getContraints($field),
+            );
+        }
+
+        return $newFields;
+    }
+
+    /**
+     * Get a set of validation constraints.
+     *
+     * @param array|string $field
+     *
+     * @retur array|null
+     */
+    protected function getContraints($field)
+    {
+        if (!is_array($field)) {
+            return;
+        }
+
+        $constraints = array();
+        if (isset($field['required']) && $field['required']) {
+            $constraints[] = 'NotBlank';
+        }
+        if (isset($field['minlength']) || isset($field['maxlength'])) {
+            $constraints[] = array('Length' => array(
+                'min' => isset($field['minlength']) ? $field['minlength'] : null,
+                'max' => isset($field['maxlength']) ? $field['maxlength'] : null,
+            ));
+        }
+
+        return $constraints;
     }
 }
