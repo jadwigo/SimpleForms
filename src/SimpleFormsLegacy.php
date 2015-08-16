@@ -200,7 +200,6 @@ class SimpleFormsLegacy
         }
 
         $use_ssl = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off');
-        $this->app['twig.loader.filesystem']->addPath(dirname(__DIR__));
         $formhtml = $this->app['render']->render($formconfig['template'], array(
             "submit"          => "Send",
             "form"            => $form->createView(),

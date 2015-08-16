@@ -49,15 +49,29 @@ class Extension extends \Bolt\BaseExtension
             }
 
             // Add Twig functions
-            if ($this->config['legacy']) {
-                $class = new SimpleFormsLegacy($this->app);
-            } else {
-                $class = new SimpleForms($this->app);
-            }
-
-            $this->initializeTwig();
-            $this->twigExtension->addTwigFunction(new \Twig_SimpleFunction('simpleform', array($class, 'simpleForm')));
+            $this->addTwigFunction('simpleform', 'simpleForm');
         }
+    }
+
+    /**
+     * Create a simple Form.
+     *
+     * @param string $formname
+     * @param array  $with
+     *
+     * @return \Twig_Markup
+     */
+    public function simpleForm($formname = '', $with = array())
+    {
+        if ($this->config['legacy']) {
+            $class = new SimpleFormsLegacy($this->app);
+        } else {
+            $class = new SimpleForms($this->app);
+        }
+
+        $this->app['twig.loader.filesystem']->addPath(__DIR__);
+
+        return $class->simpleForm($formname, $with);
     }
 
     /**
