@@ -12,6 +12,12 @@
 		"bolt/bolt" : ">=2.0.0,<3.0.0",
 		"bolt/boltforms" : "^2.3"
 	},
+    "repositories" : [{
+            "type" : "composer",
+            "name" : "bolt",
+            "url" : "https://extensions.bolt.cm/satis/"
+        }
+    ],
 	"authors" : [{
 			"name" : "Lodewijk Evers",
 			"email" : "lodewijk@twokings.nl",
