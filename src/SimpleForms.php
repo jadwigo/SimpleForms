@@ -114,6 +114,10 @@ class SimpleForms
 
         // Override CSRF setting
         $this->boltFormsExt->config['csrf'] = $this->config['csrf'];
+
+        // Override templates
+        $this->boltFormsExt->config['templates']['form'] = $this->config['template'];
+        $this->boltFormsExt->config['templates']['email'] = $this->config['mail_template'];
     }
 
     /**
@@ -156,6 +160,11 @@ class SimpleForms
         $newFields['feedback'] = array(
             'success' => $this->config['message_ok'],
             'error'   => $this->config['message_error'],
+        );
+
+        $newFields['templates'] = array(
+            'form'  => $this->config['template'],
+            'email' => $this->config['mail_template'],
         );
 
         if (isset($fields['insert_into_table'])) {
