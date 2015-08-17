@@ -151,10 +151,8 @@ class SimpleForms
 
         foreach ($fields['fields'] as $field => $values) {
             $newFields['fields'][$field]['type'] = isset($values['type']) ? $values['type'] : 'submit';
-
-            if ($newFields['fields'][$field]['type'] === 'choice') {
-                $newFields['fields'][$field]['options']['choices'] = $values['choices'];
-                $newFields['fields'][$field]['options']['multiple'] = isset($values['multiple']) ? $values['multiple'] : false;
+            if ($newFields['fields'][$field]['type'] === 'submit') {
+                continue;
             }
 
             $newFields['fields'][$field]['options'] = array(
@@ -166,6 +164,12 @@ class SimpleForms
                 ),
                 'constraints' => $this->getContraints($field),
             );
+
+            // Set last
+            if ($newFields['fields'][$field]['type'] === 'choice') {
+                $newFields['fields'][$field]['options']['choices'] = $values['choices'];
+                $newFields['fields'][$field]['options']['multiple'] = isset($values['multiple']) ? $values['multiple'] : false;
+            }
         }
 
         return $newFields;
