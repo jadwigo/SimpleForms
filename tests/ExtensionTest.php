@@ -89,7 +89,7 @@ class ExtensionTest extends AbstractSimpleFormsUnitTest
 
     public function testSimpleFormPostMailSendDebugOn()
     {
-        $app = $this->getApp();
+        $app = $this->getApp(false);
         $extension = $this->getExtension($app);
         $extension->config['testmode'] = true;
         $parameters = $this->getPostParameters();
@@ -100,7 +100,8 @@ class ExtensionTest extends AbstractSimpleFormsUnitTest
             ->will($this->returnCallback(function ($message) {
                     $message = $message->toString();
                     \PHPUnit_Framework_Assert::assertRegExp('#Subject: Testing Email Subject Line#', $message);
-                    \PHPUnit_Framework_Assert::assertRegExp('#From: Lodewijk Evers <jadwigo@example.org>#', $message);
+                    // v1.x handled this incorrectly
+                    \PHPUnit_Framework_Assert::assertRegExp('#From: Road Runner <road@runner.com>#', $message);
                     \PHPUnit_Framework_Assert::assertRegExp('#To: Gawain Lynch <info@example.com>#', $message);
                     \PHPUnit_Framework_Assert::assertRegExp('#Somebody used the form on#', $message);
                     \PHPUnit_Framework_Assert::assertRegExp('#The posted data is as follows#', $message);
@@ -118,6 +119,7 @@ class ExtensionTest extends AbstractSimpleFormsUnitTest
         $app['mailer'] = $mailer;
 
         $app['request'] = Request::create('/', 'POST', $parameters);
+        $app->boot();
         $extension->simpleForm('test_simple_form');
     }
 
@@ -149,30 +151,87 @@ class ExtensionTest extends AbstractSimpleFormsUnitTest
 
     public function testSimpleFormPostMailSendWithCallbacks()
     {
-        $app = $this->getApp();
+        $app = $this->getApp(false);
         $extension = $this->getExtension($app);
-        $app['extensions.SimpleForms']->config['test_simple_form']['fields']['date'] = array('type' => 'date');
-        $app['extensions.SimpleForms']->config['test_simple_form']['fields']['ip'] = array('type' => 'ip');
-        $app['extensions.SimpleForms']->config['test_simple_form']['fields']['host'] = array('type' => 'remotehost');
-        $app['extensions.SimpleForms']->config['test_simple_form']['fields']['ua'] = array('type' => 'useragent');
-        $app['extensions.SimpleForms']->config['test_simple_form']['fields']['now'] = array('type' => 'timestamp');
+        if ($app['extensions.SimpleForms']->config['legacy']) {
+            $app['extensions.SimpleForms']->config['test_simple_form']['fields']['date'] = array('type' => 'date');
+            $app['extensions.SimpleForms']->config['test_simple_form']['fields']['ip'] = array('type' => 'ip');
+            $app['extensions.SimpleForms']->config['test_simple_form']['fields']['host'] = array('type' => 'remotehost');
+            $app['extensions.SimpleForms']->config['test_simple_form']['fields']['ua'] = array('type' => 'useragent');
+            $app['extensions.SimpleForms']->config['test_simple_form']['fields']['now'] = array('type' => 'timestamp');
+        } else {
+//             $app['extensions.SimpleForms']->config['test_simple_form']['fields']['date'] = array(
+//                 'type' => 'hidden',
+//                 'options' => array(
+//                     'label' => false
+//                 ),
+//                 'event' => array(
+//                     'name' => 'next_increment'
+//                 ),
+//             );
+            $app['extensions.SimpleForms']->config['test_simple_form']['fields']['ip'] = array(
+                'type' => 'hidden',
+                'options' => array(
+                    'label' => false
+                ),
+                'event' => array(
+                    'name' => 'server_value',
+                    'params' => array(
+                        'key' => 'REMOTE_ADDR'
+                    ),
+                ),
+            );
+            $app['extensions.SimpleForms']->config['test_simple_form']['fields']['host'] = array(
+                'type' => 'hidden',
+                'options' => array(
+                    'label' => false
+                ),
+                'event' => array(
+                    'name' => 'server_value',
+                    'params' => array(
+                        'key' => 'REMOTE_HOST'
+                    ),
+                ),
+            );
+            $app['extensions.SimpleForms']->config['test_simple_form']['fields']['ua'] = array(
+                'type' => 'hidden',
+                'options' => array(
+                    'label' => false
+                ),
+                'event' => array(
+                    'name' => 'server_value',
+                    'params' => array(
+                        'key' => 'HTTP_USER_AGENT'
+                    ),
+                ),
+            );
+//             $app['extensions.SimpleForms']->config['test_simple_form']['fields']['now'] = array(
+//                 'type' => 'hidden',
+//                 'options' => array(
+//                     'label' => false
+//                 ),
+//                 'event' => array(
+//                     'name' => 'next_increment'
+//                 ),
+//             );
+        }
         $parameters = $this->getPostParameters();
-        $parameters['test_simple_form']['date'] = array(
-            'day' => 23,
-            'month' => 10,
-            'year'  => 2010
-        );
+//         $parameters['test_simple_form']['date'] = array(
+//             'day' => 23,
+//             'month' => 10,
+//             'year'  => 2010
+//         );
 
         $mailer = $this->getMock('\Swift_Mailer', array('send'), array($app['swiftmailer.transport']));
         $mailer->expects($this->any())
             ->method('send')
             ->will($this->returnCallback(function ($message) {
                     $message = $message->toString();
-                    \PHPUnit_Framework_Assert::assertRegExp('#date: 2010-10-23#', $message);
+//                     \PHPUnit_Framework_Assert::assertRegExp('#date: 2010-10-23#', $message);
                     \PHPUnit_Framework_Assert::assertRegExp('#ip: 8.8.8.8#', $message);
                     \PHPUnit_Framework_Assert::assertRegExp('#host: simpleforms.bolt.cm#', $message);
                     \PHPUnit_Framework_Assert::assertRegExp('#ua: SimpleForms/2.X#', $message);
-                    \PHPUnit_Framework_Assert::assertRegExp('#now: [1-9]#', $message);
+//                     \PHPUnit_Framework_Assert::assertRegExp('#now: [1-9]#', $message);
                 }
             ))
         ;
@@ -195,6 +254,7 @@ class ExtensionTest extends AbstractSimpleFormsUnitTest
         );
 
         $app['request'] = Request::create('/', 'POST', $parameters, array(), array(), $server);
+        $app->boot();
         $extension->simpleForm('test_simple_form');
     }
 }
