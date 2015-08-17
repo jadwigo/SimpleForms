@@ -128,19 +128,19 @@ class SimpleForms
         $newFields = array();
 
         $newFields['notification'] = array(
-            'enabled' => 'true',
-            'subject' => isset($fields['mail_subject']) ? $fields['mail_subject'] : 'Your message was submitted',
-            'from_name' => isset($fields['from_name']) ? $fields['from_name'] : null,
-            'from_email' => isset($fields['from_email']) ? $fields['from_email'] : null,
-            'replyto_name' => isset($fields['recipient_name']) ? $fields['recipient_name'] : null,
+            'enabled'       => 'true',
+            'subject'       => isset($fields['mail_subject']) ? $fields['mail_subject'] : 'Your message was submitted',
+            'from_name'     => isset($fields['from_name']) ? $fields['from_name'] : null,
+            'from_email'    => isset($fields['from_email']) ? $fields['from_email'] : null,
+            'replyto_name'  => isset($fields['recipient_name']) ? $fields['recipient_name'] : null,
             'replyto_email' => isset($fields['replyto_email']) ? $fields['replyto_email'] : null,
-            'to_name' => isset($fields['recipient_email']) ? $fields['recipient_email'] : null,
-            'to_email' => isset($fields['recipient_email']) ? $fields['recipient_email'] : null,
-            'cc_name' => isset($fields['recipient_cc_name']) ? $fields['recipient_cc_name'] : null,
-            'cc_email' => isset($fields['recipient_cc_email']) ? $fields['recipient_cc_email'] : null,
-            'bcc_name' => isset($fields['recipient_bcc_name']) ? $fields['recipient_bcc_name'] : null,
-            'bcc_email' => isset($fields['recipient_bcc_email']) ? $fields['recipient_bcc_email'] : null,
-            'attach_files' => isset($fields['attach_files']) ? $fields['attach_files'] : false,
+            'to_name'       => isset($fields['recipient_email']) ? $fields['recipient_email'] : null,
+            'to_email'      => isset($fields['recipient_email']) ? $fields['recipient_email'] : null,
+            'cc_name'       => isset($fields['recipient_cc_name']) ? $fields['recipient_cc_name'] : null,
+            'cc_email'      => isset($fields['recipient_cc_email']) ? $fields['recipient_cc_email'] : null,
+            'bcc_name'      => isset($fields['recipient_bcc_name']) ? $fields['recipient_bcc_name'] : null,
+            'bcc_email'     => isset($fields['recipient_bcc_email']) ? $fields['recipient_bcc_email'] : null,
+            'attach_files'  => isset($fields['attach_files']) ? $fields['attach_files'] : false,
         );
 
         if (isset($fields['insert_into_table'])) {
@@ -155,10 +155,11 @@ class SimpleForms
 
             $newFields['fields'][$field]['options'] = array(
                 'required' => isset($values['required']) ? $values['required'] : false,
-                'label' => isset($values['label']) ? $values['label'] : null,
-                'attr' => array(
+                'label'    => isset($values['label']) ? $values['label'] : null,
+                'attr'     => array(
                     'placeholder' => isset($values['placeholder']) ? $values['placeholder'] : null,
-                    'class' => isset($values['class']) ? $values['class'] : null,
+                    'class'       => isset($values['class']) ? $values['class'] : null,
+                    'type'        => $newFields['fields'][$field]['type'], // Compatibility
                 ),
                 'constraints' => $this->getContraints($field),
             );
