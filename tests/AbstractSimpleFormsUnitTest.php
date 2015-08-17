@@ -2,6 +2,8 @@
 
 namespace Bolt\Extension\Bolt\SimpleForms\Tests;
 
+use Bolt\Extension\Bolt\BoltForms\Extension as BoltFormsExtension;
+use Bolt\Extension\Bolt\BoltForms\Provider\BoltFormsServiceProvider;
 use Bolt\Extension\Bolt\SimpleForms\Extension;
 use Bolt\Tests\BoltUnitTest;
 
@@ -16,6 +18,9 @@ abstract class AbstractSimpleFormsUnitTest extends BoltUnitTest
     {
         $app = parent::getApp($boot);
         $extension = new Extension($app);
+        $boltforms = new BoltFormsExtension($app);
+        $boltformsSp = new BoltFormsServiceProvider();
+        $boltformsSp->register($app);
 
         $config = $this->getMock('\Bolt\Config', array('getWhichEnd'), array($app));
         $config->expects($this->any())
@@ -23,8 +28,10 @@ abstract class AbstractSimpleFormsUnitTest extends BoltUnitTest
             ->will($this->returnValue('frontend'));
         $app['config'] = $config;
 
+        $app['extensions']->register($boltforms);
         $app['extensions']->register($extension);
 
+        $app->boot();
         return $app;
     }
 
