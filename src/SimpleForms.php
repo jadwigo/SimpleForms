@@ -43,8 +43,7 @@ class SimpleForms
 
         // Set up SimpleForms and BoltForms differences
         $formDefinition = $this->convertFormConfig($this->config[$formname]);
-        $this->setupRecaptcha();
-        $this->setupEmailDebug();
+        $this->setupOverrides();
 
         $data = array();
         $options = array();
@@ -100,22 +99,21 @@ class SimpleForms
     }
 
     /**
-     * Override the private key in BoltForms for reCaptcha.
+     * Override BoltForms settings.
      */
-    protected function setupRecaptcha()
+    protected function setupOverrides()
     {
+        // Override the private key in BoltForms for reCaptcha.
         if (!empty($this->config['recaptcha_private_key'])) {
             $this->boltFormsExt->config['recaptcha']['private_key'] = $this->config['recaptcha_private_key'];
         }
-    }
 
-    /**
-     * Override email debug settings in BoltForms.
-     */
-    protected function setupEmailDebug()
-    {
+        // Override email debug settings in BoltForms.
         $this->boltFormsExt->config['debug']['enabled'] = $this->config['testmode'];
         $this->boltFormsExt->config['debug']['address'] = $this->config['testmode_recipient'];
+
+        // Override CSRF setting
+        $this->boltFormsExt->config['csrf'] = $this->config['csrf'];
     }
 
     /**
