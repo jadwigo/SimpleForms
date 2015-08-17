@@ -3,6 +3,8 @@
 namespace Bolt\Extension\Bolt\SimpleForms;
 
 use Bolt\Application;
+use Bolt\Extension\Bolt\BoltForms\Exception\FileUploadException;
+use Bolt\Extension\Bolt\BoltForms\Exception\FormValidationException;
 
 /**
  * SimpleForms functionality class
