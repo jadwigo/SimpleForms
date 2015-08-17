@@ -118,6 +118,14 @@ class SimpleForms
         // Override templates
         $this->boltFormsExt->config['templates']['form'] = $this->config['template'];
         $this->boltFormsExt->config['templates']['email'] = $this->config['mail_template'];
+
+        // Override the field name mappings
+        $this->app['boltforms.fieldmap'] = array(
+            'config'  => 'config',
+            'data'    => 'form',
+            'fields'  => 'fields',
+            'subject' => 'subject',
+        );
     }
 
     /**
@@ -143,6 +151,7 @@ class SimpleForms
 
         $newFields['notification'] = array(
             'enabled'       => 'true',
+            'debug'         => $this->config['testmode'],
             'subject'       => isset($fields['mail_subject']) ? $fields['mail_subject'] : 'Your message was submitted',
             'from_name'     => isset($fields['from_name']) ? $fields['from_name'] : null,
             'from_email'    => isset($fields['from_email']) ? $fields['from_email'] : null,
