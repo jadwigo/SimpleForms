@@ -50,7 +50,7 @@ class SimpleForms
         $this->listeningFormName = $formName;
 
         // Set up SimpleForms and BoltForms differences
-        $formDefinition = $this->convertFormConfig($this->config[$formName]);
+        $formDefinition = $this->convertFormConfig($formName);
         $this->setupOverrides();
 
         $data = array();
@@ -169,12 +169,13 @@ class SimpleForms
     /**
      * Convert SimpleForms field configuration to Symfony/BoltForms style.
      *
-     * @param array $fields
+     * @param string $formName
      *
      * @return array
      */
-    protected function convertFormConfig(array $fields)
+    protected function convertFormConfig($formName)
     {
+        $fields = $this->config[$formName];
         $newFields = array();
         $useMap = array(
             'from_email'          => 'from_email',
@@ -246,6 +247,19 @@ class SimpleForms
                 $newFields['fields'][$field]['options']['empty_value'] = isset($values['empty_value']) ? $values['empty_value'] : '';
                 $newFields['fields'][$field]['options']['multiple'] = isset($values['multiple']) ? $values['multiple'] : false;
             }
+        }
+
+        // Custom submit button text
+        if (isset($this->config[$formName]['button_text'])) {
+            $newFields['fields']['submit'] = array(
+                'type'  => 'submit',
+                'options' => array(
+                    'label' => $this->config[$formName]['button_text'],
+                    'attr'  => array(
+                        'class' => 'simpleform-submit'
+                    ),
+                ),
+            );
         }
 
         return $newFields;
