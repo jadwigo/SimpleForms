@@ -3,6 +3,8 @@
 namespace Bolt\Extension\Bolt\SimpleForms;
 
 use Bolt\Application;
+use Bolt\Extension\Bolt\BoltForms\Event\BoltFormsEvents;
+use Bolt\Extension\Bolt\BoltForms\Event\BoltFormsProcessorEvent;
 use Bolt\Extension\Bolt\BoltForms\Exception\FileUploadException;
 use Bolt\Extension\Bolt\BoltForms\Exception\FormValidationException;
 
@@ -17,6 +19,8 @@ class SimpleForms
     private $config;
     /** @var array */
     private $boltFormsExt;
+    /** @var string */
+    private $listeningFormName;
 
     public function __construct(Application $app)
     {
@@ -40,6 +44,10 @@ class SimpleForms
         if (!isset($this->config[$formName])) {
             return new \Twig_Markup("<p><strong>SimpleForms is missing the configuration for the form named '$formName'!</strong></p>", 'UTF-8');
         }
+
+        // Handle submitted form value transformation.
+        $this->app['dispatcher']->addListener(BoltFormsEvents::SUBMISSION_PROCESSOR,  array($this, 'submissionProcessor'));
+        $this->listeningFormName = $formName;
 
         // Set up SimpleForms and BoltForms differences
         $formDefinition = $this->convertFormConfig($this->config[$formName]);
@@ -96,6 +104,36 @@ class SimpleForms
 
         // Render the Twig_Markup
         return $this->app['boltforms']->renderForm($formName, $this->config['template'], $twigvalues);
+    }
+
+    /**
+     * Handle submitted form value transformation.
+     *
+     * @param BoltFormsProcessorEvent $event
+     */
+    public function submissionProcessor(BoltFormsProcessorEvent $event)
+    {
+        if ($event->getFormName() === $this->listeningFormName) {
+            if (!isset($this->config[$this->listeningFormName]['fields'])) {
+                return;
+            }
+
+            // Get the data from the event
+            $data = $event->getData();
+
+            foreach ($this->config[$this->listeningFormName]['fields'] as $name => $values) {
+                if (isset($values['type']) && $values['type'] === 'choice') {
+                    $data[$name] = $values['choices'][$data[$name]];
+                } elseif (isset($values['type']) && $values['type'] === 'checkbox') {
+                    if (gettype($data[$name]) === 'boolean') {
+                        $data[$name] = $data[$name] ? 'yes' : 'no';
+                    }
+                }
+            }
+
+            // Save the data back
+            $event->setData($data);
+        }
     }
 
     /**
