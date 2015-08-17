@@ -223,6 +223,12 @@ class SimpleForms
             // Default to text field if nothing set
             $newFields['fields'][$field]['type'] = isset($values['type']) ? $values['type'] : 'text';
 
+            // Handle event driven fields
+            if (isset($fields['fields'][$field]['event'])) {
+                $newFields['fields'][$field] = $fields['fields'][$field];
+                continue;
+            }
+
             // Compile base options
             $newFields['fields'][$field]['options'] = array(
                 'required' => isset($values['required']) ? $values['required'] : false,
