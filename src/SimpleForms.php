@@ -99,7 +99,7 @@ class SimpleForms
             'formname'        => $formName,
             'recaptcha_html'  => ($this->config['recaptcha_enabled'] ? recaptcha_get_html($this->config['recaptcha_public_key'], null, $use_ssl) : ''),
             'recaptcha_theme' => ($this->config['recaptcha_enabled'] ? $this->config['recaptcha_theme'] : ''),
-            'button_text'     => $this->config['button_text']
+            'button_text'     => isset($this->config[$formName]['button_text']) ? $this->config[$formName]['button_text'] : $this->config['button_text']
         );
 
         // Render the Twig_Markup
@@ -247,19 +247,6 @@ class SimpleForms
                 $newFields['fields'][$field]['options']['empty_value'] = isset($values['empty_value']) ? $values['empty_value'] : '';
                 $newFields['fields'][$field]['options']['multiple'] = isset($values['multiple']) ? $values['multiple'] : false;
             }
-        }
-
-        // Custom submit button text
-        if (isset($this->config[$formName]['button_text'])) {
-            $newFields['fields']['submit'] = array(
-                'type'  => 'submit',
-                'options' => array(
-                    'label' => $this->config[$formName]['button_text'],
-                    'attr'  => array(
-                        'class' => 'simpleform-submit'
-                    ),
-                ),
-            );
         }
 
         return $newFields;
