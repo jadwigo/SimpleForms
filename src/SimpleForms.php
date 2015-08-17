@@ -188,13 +188,34 @@ class SimpleForms
         }
 
         $constraints = array();
+
+        // Set NotBlank validator for 'required' fields
         if (isset($fieldValues['required']) && $fieldValues['required']) {
             $constraints[] = 'NotBlank';
         }
+
+        // Set Length validator for minlength or maxlength options
         if (isset($fieldValues['minlength']) || isset($fieldValues['maxlength'])) {
             $constraints[] = array('Length' => array(
                 'min' => isset($fieldValues['minlength']) ? $fieldValues['minlength'] : null,
                 'max' => isset($fieldValues['maxlength']) ? $fieldValues['maxlength'] : null,
+            ));
+        }
+
+        // Set Email validator for email field types
+        if (isset($fieldValues['type']) && $fieldValues['type'] === 'email') {
+            $constraints[] = 'Email';
+        }
+
+        // Set File validator for file field types
+        if (isset($fieldValues['type']) && $fieldValues['type'] === 'file') {
+            if (!isset($fieldValues['filetype']) || empty($fieldValues['filetype'])) {
+                $fieldValues['filetype'] = array('jpg', 'jpeg', 'png', 'gif', 'pdf', 'txt', 'doc', 'docx');
+            }
+
+            $constraints[] = array('File' => array(
+                'mimeTypes'        => $fieldValues['mimetype'],
+                'mimeTypesMessage' => $fieldValues['mime_types_message'] . ' ' . implode(', ', $fieldValues['filetype']),
             ));
         }
 
