@@ -39,7 +39,8 @@ class SimpleForms
             return new \Twig_Markup("<p><strong>SimpleForms is missing the configuration for the form named '$formname'!</strong></p>", 'UTF-8');
         }
 
-        // Set our own reCaptcha key if provided
+        // Set up SimpleForms and BoltForms differences
+        $formDefinition = $this->convertFormConfig($this->config[$formname]);
         $this->setupRecaptcha();
         $this->setupEmailDebug();
 
@@ -55,7 +56,7 @@ class SimpleForms
 
         $this->app['boltforms']->makeForm($formname, 'form', $data, $options);
 
-        $fields = $this->convertFormConfig($this->config[$formname]['fields']);
+        $fields = $formDefinition['fields'];
 
         // Add our fields all at once
         $this->app['boltforms']->addFieldArray($formname, $fields);
@@ -66,7 +67,7 @@ class SimpleForms
             $recaptchaResponse = $this->app['boltforms.processor']->reCaptchaResponse($this->app['request']);
 
             try {
-                $sent = $this->app['boltforms.processor']->process($formname, $recaptchaResponse);
+                $sent = $this->app['boltforms.processor']->process($formname, $formDefinition, $recaptchaResponse);
                 $message = isset($this->config[$formname]['feedback']['success']) ? $this->config[$formname]['feedback']['success'] : 'Form submitted sucessfully';
             } catch (FileUploadException $e) {
                 $error = $e->getMessage();
@@ -125,10 +126,36 @@ class SimpleForms
     protected function convertFormConfig(array $fields)
     {
         $newFields = array();
-        foreach ($fields as $field => $values) {
-            $newFields[$field]['type'] = isset($values['type']) ? $values['type'] : 'submit';
 
-            $newFields[$field]['options'] = array(
+        $newFields['notification'] = array(
+            'enabled' => 'true',
+            'subject' => isset($fields['mail_subject']) ? $fields['mail_subject'] : 'Your message was submitted',
+            'from_name' => isset($fields['from_name']) ? $fields['from_name'] : null,
+            'from_email' => isset($fields['from_email']) ? $fields['from_email'] : null,
+            'replyto_name' => isset($fields['recipient_name']) ? $fields['recipient_name'] : null,
+            'replyto_email' => isset($fields['replyto_email']) ? $fields['replyto_email'] : null,
+            'to_name' => isset($fields['recipient_email']) ? $fields['recipient_email'] : null,
+            'to_email' => isset($fields['recipient_email']) ? $fields['recipient_email'] : null,
+            'cc_name' => isset($fields['recipient_cc_name']) ? $fields['recipient_cc_name'] : null,
+            'cc_email' => isset($fields['recipient_cc_email']) ? $fields['recipient_cc_email'] : null,
+            'bcc_name' => isset($fields['recipient_bcc_name']) ? $fields['recipient_bcc_name'] : null,
+            'bcc_email' => isset($fields['recipient_bcc_email']) ? $fields['recipient_bcc_email'] : null,
+            'attach_files' => isset($fields['attach_files']) ? $fields['attach_files'] : false,
+        );
+
+        if (isset($fields['insert_into_table'])) {
+            $newFields['database']['table'] = $fields['insert_into_table'];
+        }
+
+        foreach ($fields['fields'] as $field => $values) {
+            $newFields['fields'][$field]['type'] = isset($values['type']) ? $values['type'] : 'submit';
+
+            if ($newFields['fields'][$field]['type'] === 'choice') {
+                $newFields['fields'][$field]['options']['choices'] = $values['choices'];
+                $newFields['fields'][$field]['options']['multiple'] = isset($values['multiple']) ? $values['multiple'] : false;
+            }
+
+            $newFields['fields'][$field]['options'] = array(
                 'required' => isset($values['required']) ? $values['required'] : false,
                 'label' => isset($values['label']) ? $values['label'] : null,
                 'attr' => array(
@@ -137,11 +164,6 @@ class SimpleForms
                 ),
                 'constraints' => $this->getContraints($field),
             );
-
-            if ($newFields[$field]['type'] == 'choice') {
-                $newFields[$field]['options']['choices'] = $values['choices'];
-                $newFields[$field]['options']['multiple'] = isset($values['multiple']) ? $values['multiple'] : false;
-            }
         }
 
         return $newFields;
