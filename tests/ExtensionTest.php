@@ -89,10 +89,11 @@ class ExtensionTest extends AbstractSimpleFormsUnitTest
         $this->assertRegExp('#<p class="simpleform-message">Thanks! Your message has been sent.</p>#', (string) $html);
     }
 
-    public function testSimpleFormPostMailSend()
+    public function testSimpleFormPostMailSendDebugOn()
     {
         $app = $this->getApp();
         $extension = $this->getExtension($app);
+        $extension->config['testmode'] = true;
         $parameters = $this->getPostParameters();
 
         $mailer = $this->getMock('\Swift_Mailer', array('send'), array($app['swiftmailer.transport']));
