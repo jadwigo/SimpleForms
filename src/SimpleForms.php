@@ -161,7 +161,7 @@ class SimpleForms
                     'class'       => isset($values['class']) ? $values['class'] : null,
                     'type'        => $newFields['fields'][$field]['type'], // Compatibility
                 ),
-                'constraints' => $this->getContraints($field),
+                'constraints' => $this->getContraints($values),
             );
 
             // Set last
@@ -177,24 +177,24 @@ class SimpleForms
     /**
      * Get a set of validation constraints.
      *
-     * @param array|string $field
+     * @param array|string $fieldValues
      *
      * @retur array|null
      */
-    protected function getContraints($field)
+    protected function getContraints($fieldValues)
     {
-        if (!is_array($field)) {
+        if (!is_array($fieldValues)) {
             return;
         }
 
         $constraints = array();
-        if (isset($field['required']) && $field['required']) {
+        if (isset($fieldValues['required']) && $fieldValues['required']) {
             $constraints[] = 'NotBlank';
         }
-        if (isset($field['minlength']) || isset($field['maxlength'])) {
+        if (isset($fieldValues['minlength']) || isset($fieldValues['maxlength'])) {
             $constraints[] = array('Length' => array(
-                'min' => isset($field['minlength']) ? $field['minlength'] : null,
-                'max' => isset($field['maxlength']) ? $field['maxlength'] : null,
+                'min' => isset($fieldValues['minlength']) ? $fieldValues['minlength'] : null,
+                'max' => isset($fieldValues['maxlength']) ? $fieldValues['maxlength'] : null,
             ));
         }
 
