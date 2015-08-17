@@ -167,6 +167,7 @@ class SimpleForms
             // Set last
             if ($newFields['fields'][$field]['type'] === 'choice') {
                 $newFields['fields'][$field]['options']['choices'] = $values['choices'];
+                $newFields['fields'][$field]['options']['empty_value'] = isset($values['empty_value']) ? $values['empty_value'] : '';
                 $newFields['fields'][$field]['options']['multiple'] = isset($values['multiple']) ? $values['multiple'] : false;
             }
         }
