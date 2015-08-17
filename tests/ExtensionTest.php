@@ -137,8 +137,8 @@ class ExtensionTest extends AbstractSimpleFormsUnitTest
                     \PHPUnit_Framework_Assert::assertRegExp('#Subject: Testing Email Subject Line#', $message);
                     \PHPUnit_Framework_Assert::assertRegExp('#From: Road Runner <road@runner.com>#', $message);
                     \PHPUnit_Framework_Assert::assertRegExp('#To: Gawain Lynch <gawain@example.org>#', $message);
-                    \PHPUnit_Framework_Assert::assertRegExp('#Cc: xiao@example.org#', $message);
-                    \PHPUnit_Framework_Assert::assertRegExp('#Bcc: bob@example.org#', $message);
+                    \PHPUnit_Framework_Assert::assertRegExp('#(Cc: )(Xiao-Hu Tai <|)(xiao@example.org)(>|)#', $message);
+                    \PHPUnit_Framework_Assert::assertRegExp('#(Bcc: )(Bob den Otter <|)(bob@example.org)(>|)#', $message);
                 }
             ))
         ;
