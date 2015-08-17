@@ -3,7 +3,6 @@
 namespace Bolt\Extension\Bolt\SimpleForms;
 
 use Bolt\Application;
-use Bolt\Extension\Bolt\SimpleForms\Extension;
 use Bolt\Library as Lib;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Validator\Constraints as Assert;
