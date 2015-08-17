@@ -219,11 +219,10 @@ class SimpleForms
         }
 
         foreach ($fields['fields'] as $field => $values) {
-            $newFields['fields'][$field]['type'] = isset($values['type']) ? $values['type'] : 'submit';
-            if ($newFields['fields'][$field]['type'] === 'submit') {
-                continue;
-            }
+            // Default to text field if nothing set
+            $newFields['fields'][$field]['type'] = isset($values['type']) ? $values['type'] : 'text';
 
+            // Compile base options
             $newFields['fields'][$field]['options'] = array(
                 'required' => isset($values['required']) ? $values['required'] : false,
                 'label'    => isset($values['label']) ? $values['label'] : null,
