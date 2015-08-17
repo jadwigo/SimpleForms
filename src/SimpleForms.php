@@ -30,19 +30,19 @@ class SimpleForms
     /**
      * Create a simple Form.
      *
-     * @param string $formname
+     * @param string $formName
      * @param array  $with
      *
      * @return \Twig_Markup
      */
-    public function simpleForm($formname = '', $with = array())
+    public function simpleForm($formName = '', $with = array())
     {
-        if (!isset($this->config[$formname])) {
-            return new \Twig_Markup("<p><strong>SimpleForms is missing the configuration for the form named '$formname'!</strong></p>", 'UTF-8');
+        if (!isset($this->config[$formName])) {
+            return new \Twig_Markup("<p><strong>SimpleForms is missing the configuration for the form named '$formName'!</strong></p>", 'UTF-8');
         }
 
         // Set up SimpleForms and BoltForms differences
-        $formDefinition = $this->convertFormConfig($this->config[$formname]);
+        $formDefinition = $this->convertFormConfig($this->config[$formName]);
         $this->setupOverrides();
 
         $data = array();
@@ -55,12 +55,12 @@ class SimpleForms
             'errorCodes' => null
         );
 
-        $this->app['boltforms']->makeForm($formname, 'form', $data, $options);
+        $this->app['boltforms']->makeForm($formName, 'form', $data, $options);
 
         $fields = $formDefinition['fields'];
 
         // Add our fields all at once
-        $this->app['boltforms']->addFieldArray($formname, $fields);
+        $this->app['boltforms']->addFieldArray($formName, $fields);
 
         // Handle the POST
         if ($this->app['request']->isMethod('POST')) {
@@ -68,7 +68,7 @@ class SimpleForms
             $recaptchaResponse = $this->app['boltforms.processor']->reCaptchaResponse($this->app['request']);
 
             try {
-                $sent = $this->app['boltforms.processor']->process($formname, $formDefinition, $recaptchaResponse);
+                $sent = $this->app['boltforms.processor']->process($formName, $formDefinition, $recaptchaResponse);
                 $message = isset($this->config['message_ok']) ? $this->config['message_ok'] : 'Thanks! Your message has been sent.';
             } catch (FileUploadException $e) {
                 $error = $e->getMessage();
@@ -81,21 +81,21 @@ class SimpleForms
 
         // Get our values to be passed to Twig
         $use_ssl = $this->app['request']->isSecure();
-        $fields = $this->app['boltforms']->getForm($formname)->all();
+        $fields = $this->app['boltforms']->getForm($formName)->all();
         $twigvalues = array(
             'submit'          => 'Send',
-            'form'            => $this->app['boltforms']->getForm($formname)->createView(),
+            'form'            => $this->app['boltforms']->getForm($formName)->createView(),
             'message'         => $message,
             'error'           => $error,
             'sent'            => $sent,
-            'formname'        => $formname,
+            'formname'        => $formName,
             'recaptcha_html'  => ($this->config['recaptcha_enabled'] ? recaptcha_get_html($this->config['recaptcha_public_key'], null, $use_ssl) : ''),
             'recaptcha_theme' => ($this->config['recaptcha_enabled'] ? $this->config['recaptcha_theme'] : ''),
             'button_text'     => $this->config['button_text']
         );
 
         // Render the Twig_Markup
-        return $this->app['boltforms']->renderForm($formname, $this->config['template'], $twigvalues);
+        return $this->app['boltforms']->renderForm($formName, $this->config['template'], $twigvalues);
     }
 
     /**
@@ -126,6 +126,16 @@ class SimpleForms
     protected function convertFormConfig(array $fields)
     {
         $newFields = array();
+        $useMap = array(
+            'from_email'          => 'from_email',
+            'recipient_cc_email'  => 'cc_email',
+            'recipient_bcc_email' => 'bcc_email',
+        );
+        $useMapMatch = array(
+            'from_email'          => 'from_name',
+            'recipient_cc_email'  => 'cc_name',
+            'recipient_bcc_email' => 'bcc_name',
+        );
 
         $newFields['notification'] = array(
             'enabled'       => 'true',
@@ -134,7 +144,7 @@ class SimpleForms
             'from_email'    => isset($fields['from_email']) ? $fields['from_email'] : null,
             'replyto_name'  => isset($fields['recipient_name']) ? $fields['recipient_name'] : null,
             'replyto_email' => isset($fields['replyto_email']) ? $fields['replyto_email'] : null,
-            'to_name'       => isset($fields['recipient_email']) ? $fields['recipient_email'] : null,
+            'to_name'       => isset($fields['recipient_name']) ? $fields['recipient_name'] : null,
             'to_email'      => isset($fields['recipient_email']) ? $fields['recipient_email'] : null,
             'cc_name'       => isset($fields['recipient_cc_name']) ? $fields['recipient_cc_name'] : null,
             'cc_email'      => isset($fields['recipient_cc_email']) ? $fields['recipient_cc_email'] : null,
@@ -169,6 +179,12 @@ class SimpleForms
                 'constraints' => $this->getContraints($values),
             );
 
+            // Translate the use_as & use_with values
+            if (isset($values['use_as']) && $use = $values['use_as']) {
+                $newFields['notification'][$useMap[$use]] = $field;
+                $newFields['notification'][$useMapMatch[$use]] = $values['use_with'];
+            }
+
             // Set last
             if ($newFields['fields'][$field]['type'] === 'choice') {
                 $newFields['fields'][$field]['options']['choices'] = $values['choices'];
@@ -185,7 +201,7 @@ class SimpleForms
      *
      * @param array|string $fieldValues
      *
-     * @retur array|null
+     * @return array|null
      */
     protected function getContraints($fieldValues)
     {
