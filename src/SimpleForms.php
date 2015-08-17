@@ -69,7 +69,7 @@ class SimpleForms
 
             try {
                 $sent = $this->app['boltforms.processor']->process($formname, $formDefinition, $recaptchaResponse);
-                $message = isset($this->config[$formname]['feedback']['success']) ? $this->config[$formname]['feedback']['success'] : 'Form submitted sucessfully';
+                $message = isset($this->config['message_ok']) ? $this->config['message_ok'] : 'Thanks! Your message has been sent.';
             } catch (FileUploadException $e) {
                 $error = $e->getMessage();
                 $this->app['logger.system']->debug('[SimpleForms] File upload exception: ' . $error, array('event' => 'extensions'));
@@ -141,6 +141,11 @@ class SimpleForms
             'bcc_name'      => isset($fields['recipient_bcc_name']) ? $fields['recipient_bcc_name'] : null,
             'bcc_email'     => isset($fields['recipient_bcc_email']) ? $fields['recipient_bcc_email'] : null,
             'attach_files'  => isset($fields['attach_files']) ? $fields['attach_files'] : false,
+        );
+
+        $newFields['feedback'] = array(
+            'success' => $this->config['message_ok'],
+            'error'   => $this->config['message_error'],
         );
 
         if (isset($fields['insert_into_table'])) {
