@@ -48,7 +48,7 @@ class ExtensionTest extends AbstractSimpleFormsUnitTest
         $this->assertRegExp('#<input type="email"\W+id="test_simple_form_email" name="test_simple_form\[email\]" required="required" placeholder="you@example.com" />#', $html);
         $this->assertRegExp('#<div class="simpleform-row simpleform-text\W+wide ">#', $html);
         $this->assertRegExp('#<label for="test_simple_form_subject">Other test subject</label>#', $html);
-        $this->assertRegExp('#<input type="text"\W+id="test_simple_form_subject" name="test_simple_form\[subject\]" maxlength="30" placeholder="You rang" />#', $html);
+        $this->assertRegExp('#(<input type="text"\W+id="test_simple_form_subject" name="test_simple_form\[subject\]" )(maxlength="30" |)(placeholder="You rang" />)#', $html);
         $this->assertRegExp('#<div class="simpleform-row simpleform-textarea\W+">#', $html);
         $this->assertRegExp('#<label for="test_simple_form_message" class="required">Message</label>#', $html);
         $this->assertRegExp('#<textarea\W+id="test_simple_form_message" name="test_simple_form\[message\]" required="required" placeholder="Once upon a time"></textarea></div><div class="simpleform-row simpleform-choice\W+">#', $html);
@@ -71,9 +71,7 @@ class ExtensionTest extends AbstractSimpleFormsUnitTest
         $this->assertRegExp('#<label for="test_simple_form_signup">Agree to this</label>#', $html);
         $this->assertRegExp('#<input type="checkbox"\W+id="test_simple_form_signup" name="test_simple_form\[signup\]" placeholder="Yes, of course I agree." value="1" />#', $html);
         $this->assertRegExp('#<label for="test_simple_form_signup" class="checkbox-placeholder">Yes, of course I agree.</label>#', $html);
-        $this->assertRegExp('#<div class="simpleform-row simpleform-text "><label for="test_simple_form_button_text">Button text</label>#', $html);
-        $this->assertRegExp('#<input type="text"\W+id="test_simple_form_button_text" name="test_simple_form\[button_text\]" />#', $html);
-        $this->assertRegExp('#<input type="submit" name="submit" value="Send" class="simpleform-submit" />#', $html);
+        $this->assertRegExp('#<input type="submit" name="submit" value="Send me away" class="simpleform-submit" />#', $html);
     }
 
     public function testSimpleFormPostDefault()

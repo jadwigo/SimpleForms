@@ -65,6 +65,7 @@ abstract class AbstractSimpleFormsUnitTest extends BoltUnitTest
             'insert_into_table'   => 'bolt_simple_test_form',
             'storage_location'    => 'test_uploads',
             'attach_files'        => true,
+            'button_text'         => 'Send me away',
             'fields'              => array(
                 'name' => array(
                     'type'        => 'text',
@@ -139,7 +140,6 @@ abstract class AbstractSimpleFormsUnitTest extends BoltUnitTest
                     'placeholder' => 'Yes, of course I agree.',
                     'required'    => false,
                 ),
-                'button_text' => 'Send me away',
             ),
         );
     }
