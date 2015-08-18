@@ -84,13 +84,14 @@ class ConfigurationBridge
             'email' => $config['mail_template'],
         );
 
+        $events = array('ip', 'remotehost', 'useragent', 'timestamp');
         foreach ($fields['fields'] as $field => $values) {
             // Default to text field if nothing set
             $newFields['fields'][$field]['type'] = isset($values['type']) ? $values['type'] : 'text';
 
             // Handle event driven fields
-            if (isset($fields['fields'][$field]['event'])) {
-                $newFields['fields'][$field] = $fields['fields'][$field];
+            if (in_array($fields['fields'][$field]['type'], $events)) {
+                $newFields['fields'][$field] = $this->getEventFieldValues($values);
                 continue;
             }
 
@@ -118,6 +119,41 @@ class ConfigurationBridge
         }
 
         $this->fields = $newFields;
+    }
+
+    /**
+     * Get event data for a BoltForms event field value.
+     *
+     * @param array $values
+     *
+     * @return array
+     */
+    protected function getEventFieldValues($values)
+    {
+        $nameMap = array(
+            'ip'         => 'server_value',
+            'remotehost' => 'server_value',
+            'useragent'  => 'server_value',
+            'timestamp'  => 'timestamp',
+        );
+        $paramsMap = array(
+            'ip'         => array('key'    => 'REMOTE_ADDR'),
+            'remotehost' => array('key'    => 'REMOTE_HOST'),
+            'useragent'  => array('key'    => 'HTTP_USER_AGENT'),
+            'timestamp'  => array('format' => '%F %T'),
+        );
+        $event = array(
+            'type'    => 'hidden',
+            'options' => array(
+                'label' => false
+            ),
+            'event' => array(
+                'name'   => $nameMap[$values['type']],
+                'params' => $paramsMap[$values['type']],
+            ),
+        );
+
+        return $event;
     }
 
     /**
