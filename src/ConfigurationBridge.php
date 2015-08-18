@@ -73,8 +73,11 @@ class ConfigurationBridge
         );
 
         $newFields['feedback'] = array(
-            'success' => $config['message_ok'],
-            'error'   => $config['message_error'],
+            'success'  => $config['message_ok'],
+            'error'    => $config['message_error'],
+            'redirect' => array(
+                'target' => isset($fields['redirect_on_ok']) ? $fields['redirect_on_ok'] : null,
+            ),
         );
 
         $newFields['templates'] = array(
@@ -100,13 +103,10 @@ class ConfigurationBridge
             $newFields['fields'][$field]['options'] = array(
                 'required' => isset($values['required']) ? $values['required'] : false,
                 'label'    => isset($values['label']) ? $values['label'] : null,
-                'attr'     => array(
-                    'placeholder' => isset($values['placeholder']) ? $values['placeholder'] : null,
-                    'class'       => isset($values['class']) ? $values['class'] : null,
-                    'type'        => $newFields['fields'][$field]['type'], // Compatibility
-                ),
+                'attr'     => $this->getAttributeKeys($values),
                 'constraints' => $this->getContraints($values),
             );
+            $newFields['fields'][$field]['options']['attr']['type'] = $newFields['fields'][$field]['type']; // Compatibility
 
             // Translate the use_as & use_with values
             if (isset($values['use_as']) && $use = $values['use_as']) {
@@ -123,6 +123,30 @@ class ConfigurationBridge
         }
 
         $this->fields = $newFields;
+    }
+
+    /**
+     * Map the Symfony forms attributes.
+     *
+     * @param array $values
+     *
+     * @return array
+     */
+    protected function getAttributeKeys(array $values)
+    {
+        $validAttrs = array(
+            'autocomplete', 'autofocus', 'class', 'hint', 'maxlength', 'minlength',
+            'pattern', 'placeholder', 'postfix', 'prefix', 'value',
+        );
+        $attr = array();
+
+        foreach ($validAttrs as $validAttr) {
+            if (isset($values[$validAttr])) {
+                $attr[$validAttr] = $values[$validAttr];
+            }
+        }
+
+        return $attr;
     }
 
     /**
