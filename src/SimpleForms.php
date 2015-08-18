@@ -160,7 +160,7 @@ class SimpleForms
         $this->boltFormsExt->config['templates']['email'] = $this->config['mail_template'];
 
         // Override the field name mappings
-        $this->app['boltforms.fieldmap'] = array(
+        $this->boltFormsExt->config['fieldmap']['email'] = array(
             'config'  => 'config',
             'data'    => 'form',
             'fields'  => 'fields',
