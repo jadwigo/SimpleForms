@@ -3,7 +3,7 @@
 namespace Bolt\Extension\Bolt\SimpleForms;
 
 use Symfony\Component\HttpFoundation\Request;
-use Bolt\Application;
+
 /**
  * Simple forms Extension for Bolt
  */
