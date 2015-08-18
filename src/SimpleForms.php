@@ -90,7 +90,6 @@ class SimpleForms
         }
 
         // Get our values to be passed to Twig
-        $use_ssl = $this->app['request']->isSecure();
         $fields = $this->app['boltforms']->getForm($formName)->all();
         $twigvalues = array(
             'submit'          => 'Send',
@@ -99,8 +98,8 @@ class SimpleForms
             'error'           => $error,
             'sent'            => $sent,
             'formname'        => $formName,
-            'recaptcha_html'  => ($this->config['recaptcha_enabled'] ? recaptcha_get_html($this->config['recaptcha_public_key'], null, $use_ssl) : ''),
-            'recaptcha_theme' => ($this->config['recaptcha_enabled'] ? $this->config['recaptcha_theme'] : ''),
+            'recaptcha_html'  => $this->getRecaptchaHtml(),
+            'recaptcha_theme' => $this->config['recaptcha_enabled'] ? $this->config['recaptcha_theme'] : '',
             'button_text'     => isset($this->config[$formName]['button_text']) ? $this->config[$formName]['button_text'] : $this->config['button_text']
         );
 
@@ -146,7 +145,11 @@ class SimpleForms
         // Override the private key in BoltForms for reCaptcha.
         if (!empty($this->config['recaptcha_private_key'])) {
             $this->boltFormsExt->config['recaptcha']['private_key'] = $this->config['recaptcha_private_key'];
+            $this->boltFormsExt->config['recaptcha']['public_key'] = $this->config['recaptcha_public_key'];
         }
+        $this->boltFormsExt->config['recaptcha']['enabled'] = $this->config['recaptcha_enabled'];
+        $this->boltFormsExt->config['recaptcha']['error_message'] = $this->config['recaptcha_error_message'];
+        $this->boltFormsExt->config['recaptcha']['theme'] = $this->config['recaptcha_theme'];
 
         // Override email debug settings in BoltForms.
         $this->boltFormsExt->config['debug']['enabled'] = $this->config['testmode'];
@@ -166,5 +169,26 @@ class SimpleForms
             'fields'  => 'fields',
             'subject' => 'subject',
         );
+    }
+
+    /**
+     * Generate the HTML to add the reCaptcha widget.
+     *
+     * @return \Twig_Markup
+     */
+    protected function getRecaptchaHtml()
+    {
+        if ($this->config['recaptcha_enabled'] !== true) {
+            return '';
+        }
+
+        $context = array(
+            'recaptcha' => array(
+                'label'      => 'Recaptcha',
+                'public_key' => $this->config['recaptcha_public_key'],
+            )
+        );
+
+        return $this->app['twig']->render('assets/simpleforms_recaptcha.twig', $context);
     }
 }
