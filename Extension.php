@@ -2,8 +2,6 @@
 
 namespace Bolt\Extension\Bolt\SimpleForms;
 
-use Symfony\Component\HttpFoundation\Request;
-
 /**
  * Simple forms Extension for Bolt
  */
@@ -50,23 +48,8 @@ class Extension extends \Bolt\BaseExtension
                 $this->addCSS($this->config['stylesheet']);
             }
 
-            $this->app->before(array($this, 'before'));
-
             // Add Twig functions
             $this->addTwigFunction('simpleform', 'simpleForm');
-        }
-    }
-
-    /**
-     * Before filter.
-     *
-     * @param Request $request
-     */
-    public function before(Request $request)
-    {
-        if ($request->get('new') === 'true') {
-            // Allow dynamic switching of functionality with ?new=true in the URL
-            $this->config['legacy'] = false;
         }
     }
 
@@ -80,15 +63,9 @@ class Extension extends \Bolt\BaseExtension
      */
     public function simpleForm($formname = '', $with = array())
     {
-        if ($this->config['legacy']) {
-            $class = new SimpleFormsLegacy($this->app);
-        } else {
-            $class = new SimpleForms($this->app);
-        }
-
         $this->app['twig.loader.filesystem']->addPath(__DIR__);
 
-        return $class->simpleForm($formname, $with);
+        return (new SimpleForms($this->app))->simpleForm($formname, $with);
     }
 
     /**
@@ -99,7 +76,6 @@ class Extension extends \Bolt\BaseExtension
     protected function getDefaultConfig()
     {
         return array(
-            'legacy'                  => true,
             'stylesheet'              => '',
             'template'                => 'assets/simpleforms_form.twig',
             'mail_template'           => 'assets/simpleforms_mail.twig',
