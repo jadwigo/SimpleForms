@@ -69,7 +69,6 @@ class ConfigurationBridge
             'cc_email'      => isset($fields['recipient_cc_email']) ? $fields['recipient_cc_email'] : null,
             'bcc_name'      => isset($fields['recipient_bcc_name']) ? $fields['recipient_bcc_name'] : null,
             'bcc_email'     => isset($fields['recipient_bcc_email']) ? $fields['recipient_bcc_email'] : null,
-            'attach_files'  => isset($fields['attach_files']) ? $fields['attach_files'] : false,
         );
 
         $newFields['feedback'] = array(
@@ -85,10 +84,6 @@ class ConfigurationBridge
             'email' => $config['mail_template'],
         );
 
-        if (isset($fields['insert_into_table'])) {
-            $newFields['database']['table'] = $fields['insert_into_table'];
-        }
-
         foreach ($fields['fields'] as $field => $values) {
             // Default to text field if nothing set
             $newFields['fields'][$field]['type'] = isset($values['type']) ? $values['type'] : 'text';
@@ -101,9 +96,9 @@ class ConfigurationBridge
 
             // Compile base options
             $newFields['fields'][$field]['options'] = array(
-                'required' => isset($values['required']) ? $values['required'] : false,
-                'label'    => isset($values['label']) ? $values['label'] : null,
-                'attr'     => $this->getAttributeKeys($values),
+                'required'    => isset($values['required']) ? $values['required'] : false,
+                'label'       => isset($values['label']) ? $values['label'] : null,
+                'attr'        => $this->getAttributeKeys($values),
                 'constraints' => $this->getContraints($values),
             );
             $newFields['fields'][$field]['options']['attr']['type'] = $newFields['fields'][$field]['type']; // Compatibility
@@ -180,18 +175,6 @@ class ConfigurationBridge
         // Set Email validator for email field types
         if (isset($fieldValues['type']) && $fieldValues['type'] === 'email') {
             $constraints[] = 'Email';
-        }
-
-        // Set File validator for file field types
-        if (isset($fieldValues['type']) && $fieldValues['type'] === 'file') {
-            if (!isset($fieldValues['filetype']) || empty($fieldValues['filetype'])) {
-                $fieldValues['filetype'] = array('jpg', 'jpeg', 'png', 'gif', 'pdf', 'txt', 'doc', 'docx');
-            }
-
-            $constraints[] = array('File' => array(
-                'mimeTypes'        => $fieldValues['mimetype'],
-                'mimeTypesMessage' => $fieldValues['mime_types_message'] . ' ' . implode(', ', $fieldValues['filetype']),
-            ));
         }
 
         return $constraints;
