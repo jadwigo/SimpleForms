@@ -80,9 +80,6 @@ class SimpleForms
             try {
                 $sent = $this->app['boltforms.processor']->process($formName, $formDefinition, $recaptchaResponse);
                 $message = isset($this->config['message_ok']) ? $this->config['message_ok'] : 'Thanks! Your message has been sent.';
-            } catch (FileUploadException $e) {
-                $error = $e->getMessage();
-                $this->app['logger.system']->debug('[SimpleForms] File upload exception: ' . $error, array('event' => 'extensions'));
             } catch (FormValidationException $e) {
                 $error = $e->getMessage();
                 $this->app['logger.system']->debug('[SimpleForms] Form validation exception: ' . $error, array('event' => 'extensions'));
