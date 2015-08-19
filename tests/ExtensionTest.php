@@ -247,4 +247,29 @@ class ExtensionTest extends AbstractSimpleFormsUnitTest
         );
         $this->assertSame($map, $app['extensions.BoltForms']->config['fieldmap']['email']);
     }
+
+    public function testFormValidationException()
+    {
+        $app = $this->getApp(false);
+        $extension = $this->getExtension($app);
+
+        // Keep an eye on the logger
+        $logger = $this->getMock('\Monolog\Logger', array('debug'), array('testlogger'));
+        $logger->expects($this->atLeastOnce())
+            ->method('debug')
+            ->will($this->returnCallback(function ($message) {
+                    \PHPUnit_Framework_Assert::assertSame('[SimpleForms] Form validation exception: There was an error in the form. Please check the form, and try again.', $message);
+                }
+            ))
+        ;
+        $app['logger.system'] = $logger;
+
+        $parameters = $this->getPostParameters();
+        unset($parameters['test_simple_form']['name']);
+
+        $app['request'] = Request::create('/', 'POST', $parameters);
+        $app->boot();
+
+        $extension->simpleForm('test_simple_form');
+    }
 }
