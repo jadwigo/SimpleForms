@@ -272,4 +272,23 @@ class ExtensionTest extends AbstractSimpleFormsUnitTest
 
         $extension->simpleForm('test_simple_form');
     }
+
+    public function testRecaptchaRenderAddition()
+    {
+        $app = $this->getApp(false);
+        $extension = $this->getExtension($app);
+        $app['extensions.SimpleForms']->config['recaptcha_enabled'] = true;
+        $app['extensions.SimpleForms']->config['recaptcha_private_key'] = 'abc123';
+        $app['extensions.SimpleForms']->config['recaptcha_public_key'] = 'cde456';
+
+        $app['request'] = Request::create('/');
+        $app->boot();
+
+        $html = $extension->simpleForm('test_simple_form');
+        $this->assertInstanceOf('\Twig_Markup', $html);
+
+        $html = (string) $html;
+        $this->assertRegExp('#<script src="https://www.google.com/recaptcha/api.js\?hl=en-GB" async defer></script>#', $html);
+        $this->assertRegExp('#<div class="g-recaptcha" data-sitekey="cde456"></div>#', $html);
+    }
 }
