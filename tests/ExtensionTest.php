@@ -193,4 +193,58 @@ class ExtensionTest extends AbstractSimpleFormsUnitTest
         $app->boot();
         $extension->simpleForm('test_simple_form');
     }
+
+    public function testInvalidFormName()
+    {
+        $app = $this->getApp();
+        $extension = $this->getExtension($app);
+
+        $html = $extension->simpleForm('the_koala_ate_it');
+
+        $this->assertInstanceOf('\Twig_Markup', $html);
+        $this->assertSame("<p><strong>SimpleForms is missing the configuration for the form named 'the_koala_ate_it'!</strong></p>", (string) $html);
+    }
+
+    public function testSetupOverrides()
+    {
+        $app = $this->getApp(false);
+        $extension = $this->getExtension($app);
+        $app['extensions.SimpleForms']->config['recaptcha_enabled'] = 'Yes, why not.';
+        $app['extensions.SimpleForms']->config['recaptcha_private_key'] = 'ninja_koala';
+        $app['extensions.SimpleForms']->config['recaptcha_public_key'] = 'koalas_r_us';
+        $app['extensions.SimpleForms']->config['recaptcha_error_message'] = 'Drop Bear Attack!';
+        $app['extensions.SimpleForms']->config['recaptcha_theme'] = 'the_land_downunder';
+        $app['extensions.SimpleForms']->config['testmode'] = 'Sure thing';
+        $app['extensions.SimpleForms']->config['testmode_recipient'] = 'testaddress@example.com';
+        $app['extensions.SimpleForms']->config['csrf'] = 'Make it so';
+
+        $app['extensions.SimpleForms']->config['template'] = 'assets/simpleforms_form.twig';
+        $app['extensions.SimpleForms']->config['mail_template'] = 'assets/simpleforms_mail.twig';
+
+        $parameters = $this->getPostParameters();
+        $app['request'] = Request::create('/', 'POST', $parameters);
+        $app->boot();
+
+        $extension->simpleForm('test_simple_form');
+
+        $this->assertSame('Yes, why not.', $app['extensions.BoltForms']->config['recaptcha']['enabled']);
+        $this->assertSame('koalas_r_us', $app['extensions.BoltForms']->config['recaptcha']['public_key']);
+        $this->assertSame('ninja_koala', $app['extensions.BoltForms']->config['recaptcha']['private_key']);
+        $this->assertSame('Drop Bear Attack!', $app['extensions.BoltForms']->config['recaptcha']['error_message']);
+        $this->assertSame('the_land_downunder', $app['extensions.BoltForms']->config['recaptcha']['theme']);
+        $this->assertSame('Sure thing', $app['extensions.BoltForms']->config['debug']['enabled']);
+        $this->assertSame('testaddress@example.com', $app['extensions.BoltForms']->config['debug']['address']);
+        $this->assertSame('Make it so', $app['extensions.BoltForms']->config['csrf']);
+
+        $this->assertSame('assets/simpleforms_form.twig', $app['extensions.BoltForms']->config['templates']['form']);
+        $this->assertSame('assets/simpleforms_mail.twig', $app['extensions.BoltForms']->config['templates']['email']);
+
+        $map = array(
+            'config'  => 'config',
+            'data'    => 'form',
+            'fields'  => 'fields',
+            'subject' => 'subject',
+        );
+        $this->assertSame($map, $app['extensions.BoltForms']->config['fieldmap']['email']);
+    }
 }
