@@ -35,6 +35,7 @@
          }
      },
     "extra": {
+        "bolt-icon": "assets/icon-simple-form.png",
         "branch-alias": {
             "dev-master" : "2.0.*-dev"
         }
