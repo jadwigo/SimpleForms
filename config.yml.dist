@@ -44,6 +44,9 @@ from_name: Default
 testmode : true
 testmode_recipient: info@example.com
 
+# Sets a global debugmode, the form will output a lot of internal debug information you can use this to for development
+debugmode: false
+
 # from_email and from_name can be set for picky SMTP servers
 
 # A simple contact form. Use as {{ simpleform('contact') }} in your templates.
@@ -82,6 +85,8 @@ demo:
   storage_location: demo_uploads
   # uploaded files attached to the email if true
   attach_files: true
+  # Instead of simply displaying a message when the form is 'OK', you can also redirect to a different page on the site, for a more extended message after submitting the form. The value should be a contenttype/id or contenttype/slug pair. For example: entry/1 or page/thank-you.
+  redirect_on_ok: page/thank-you
   fields:
     subject:
       type: text
