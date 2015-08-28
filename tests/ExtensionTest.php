@@ -48,7 +48,7 @@ class ExtensionTest extends AbstractSimpleFormsUnitTest
         $this->assertRegExp('#<input type="email"\W+id="test_simple_form_email" name="test_simple_form\[email\]" required="required" placeholder="you@example.com" />#', $html);
         $this->assertRegExp('#<div class="simpleform-row simpleform-text\W+wide ">#', $html);
         $this->assertRegExp('#<label for="test_simple_form_subject">Other test subject</label>#', $html);
-        $this->assertRegExp('#<input type="text"\W+id="test_simple_form_subject" name="test_simple_form\[subject\]" maxlength="30" placeholder="You rang" />#', $html);
+        $this->assertRegExp('#(<input type="text"\W+id="test_simple_form_subject" name="test_simple_form\[subject\]" )(maxlength="30" |)(placeholder="You rang" />)#', $html);
         $this->assertRegExp('#<div class="simpleform-row simpleform-textarea\W+">#', $html);
         $this->assertRegExp('#<label for="test_simple_form_message" class="required">Message</label>#', $html);
         $this->assertRegExp('#<textarea\W+id="test_simple_form_message" name="test_simple_form\[message\]" required="required" placeholder="Once upon a time"></textarea></div><div class="simpleform-row simpleform-choice\W+">#', $html);
@@ -71,9 +71,7 @@ class ExtensionTest extends AbstractSimpleFormsUnitTest
         $this->assertRegExp('#<label for="test_simple_form_signup">Agree to this</label>#', $html);
         $this->assertRegExp('#<input type="checkbox"\W+id="test_simple_form_signup" name="test_simple_form\[signup\]" placeholder="Yes, of course I agree." value="1" />#', $html);
         $this->assertRegExp('#<label for="test_simple_form_signup" class="checkbox-placeholder">Yes, of course I agree.</label>#', $html);
-        $this->assertRegExp('#<div class="simpleform-row simpleform-text "><label for="test_simple_form_button_text">Button text</label>#', $html);
-        $this->assertRegExp('#<input type="text"\W+id="test_simple_form_button_text" name="test_simple_form\[button_text\]" />#', $html);
-        $this->assertRegExp('#<input type="submit" name="submit" value="Send" class="simpleform-submit" />#', $html);
+        $this->assertRegExp('#<input type="submit" name="submit" value="Send me away" class="simpleform-submit" />#', $html);
     }
 
     public function testSimpleFormPostDefault()
@@ -89,10 +87,11 @@ class ExtensionTest extends AbstractSimpleFormsUnitTest
         $this->assertRegExp('#<p class="simpleform-message">Thanks! Your message has been sent.</p>#', (string) $html);
     }
 
-    public function testSimpleFormPostMailSend()
+    public function testSimpleFormPostMailSendDebugOn()
     {
-        $app = $this->getApp();
+        $app = $this->getApp(false);
         $extension = $this->getExtension($app);
+        $extension->config['testmode'] = true;
         $parameters = $this->getPostParameters();
 
         $mailer = $this->getMock('\Swift_Mailer', array('send'), array($app['swiftmailer.transport']));
@@ -101,7 +100,8 @@ class ExtensionTest extends AbstractSimpleFormsUnitTest
             ->will($this->returnCallback(function ($message) {
                     $message = $message->toString();
                     \PHPUnit_Framework_Assert::assertRegExp('#Subject: Testing Email Subject Line#', $message);
-                    \PHPUnit_Framework_Assert::assertRegExp('#From: Lodewijk Evers <jadwigo@example.org>#', $message);
+                    // v1.x handled this incorrectly
+                    \PHPUnit_Framework_Assert::assertRegExp('#From: Road Runner <road@runner.com>#', $message);
                     \PHPUnit_Framework_Assert::assertRegExp('#To: Gawain Lynch <info@example.com>#', $message);
                     \PHPUnit_Framework_Assert::assertRegExp('#Somebody used the form on#', $message);
                     \PHPUnit_Framework_Assert::assertRegExp('#The posted data is as follows#', $message);
@@ -119,6 +119,7 @@ class ExtensionTest extends AbstractSimpleFormsUnitTest
         $app['mailer'] = $mailer;
 
         $app['request'] = Request::create('/', 'POST', $parameters);
+        $app->boot();
         $extension->simpleForm('test_simple_form');
     }
 
@@ -137,8 +138,8 @@ class ExtensionTest extends AbstractSimpleFormsUnitTest
                     \PHPUnit_Framework_Assert::assertRegExp('#Subject: Testing Email Subject Line#', $message);
                     \PHPUnit_Framework_Assert::assertRegExp('#From: Road Runner <road@runner.com>#', $message);
                     \PHPUnit_Framework_Assert::assertRegExp('#To: Gawain Lynch <gawain@example.org>#', $message);
-                    \PHPUnit_Framework_Assert::assertRegExp('#Cc: xiao@example.org#', $message);
-                    \PHPUnit_Framework_Assert::assertRegExp('#Bcc: bob@example.org#', $message);
+                    \PHPUnit_Framework_Assert::assertRegExp('#(Cc: )(Xiao-Hu Tai <|)(xiao@example.org)(>|)#', $message);
+                    \PHPUnit_Framework_Assert::assertRegExp('#(Bcc: )(Bob den Otter <|)(bob@example.org)(>|)#', $message);
                 }
             ))
         ;
@@ -150,30 +151,23 @@ class ExtensionTest extends AbstractSimpleFormsUnitTest
 
     public function testSimpleFormPostMailSendWithCallbacks()
     {
-        $app = $this->getApp();
+        $app = $this->getApp(false);
         $extension = $this->getExtension($app);
-        $app['extensions.SimpleForms']->config['test_simple_form']['fields']['date'] = array('type' => 'date');
-        $app['extensions.SimpleForms']->config['test_simple_form']['fields']['ip'] = array('type' => 'ip');
-        $app['extensions.SimpleForms']->config['test_simple_form']['fields']['host'] = array('type' => 'remotehost');
-        $app['extensions.SimpleForms']->config['test_simple_form']['fields']['ua'] = array('type' => 'useragent');
-        $app['extensions.SimpleForms']->config['test_simple_form']['fields']['now'] = array('type' => 'timestamp');
+        $app['extensions.SimpleForms']->config['test_simple_form']['fields']['ip']['type'] = 'ip';
+        $app['extensions.SimpleForms']->config['test_simple_form']['fields']['host']['type'] = 'remotehost';
+        $app['extensions.SimpleForms']->config['test_simple_form']['fields']['ua']['type'] = 'useragent';
+        $app['extensions.SimpleForms']->config['test_simple_form']['fields']['now']['type'] = 'timestamp';
         $parameters = $this->getPostParameters();
-        $parameters['test_simple_form']['date'] = array(
-            'day' => 23,
-            'month' => 10,
-            'year'  => 2010
-        );
 
         $mailer = $this->getMock('\Swift_Mailer', array('send'), array($app['swiftmailer.transport']));
         $mailer->expects($this->any())
             ->method('send')
             ->will($this->returnCallback(function ($message) {
                     $message = $message->toString();
-                    \PHPUnit_Framework_Assert::assertRegExp('#date: 2010-10-23#', $message);
                     \PHPUnit_Framework_Assert::assertRegExp('#ip: 8.8.8.8#', $message);
                     \PHPUnit_Framework_Assert::assertRegExp('#host: simpleforms.bolt.cm#', $message);
                     \PHPUnit_Framework_Assert::assertRegExp('#ua: SimpleForms/2.X#', $message);
-                    \PHPUnit_Framework_Assert::assertRegExp('#now: [1-9]#', $message);
+                    \PHPUnit_Framework_Assert::assertRegExp('#now: [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}#', $message);
                 }
             ))
         ;
@@ -196,6 +190,105 @@ class ExtensionTest extends AbstractSimpleFormsUnitTest
         );
 
         $app['request'] = Request::create('/', 'POST', $parameters, array(), array(), $server);
+        $app->boot();
         $extension->simpleForm('test_simple_form');
+    }
+
+    public function testInvalidFormName()
+    {
+        $app = $this->getApp();
+        $extension = $this->getExtension($app);
+
+        $html = $extension->simpleForm('the_koala_ate_it');
+
+        $this->assertInstanceOf('\Twig_Markup', $html);
+        $this->assertSame("<p><strong>SimpleForms is missing the configuration for the form named 'the_koala_ate_it'!</strong></p>", (string) $html);
+    }
+
+    public function testSetupOverrides()
+    {
+        $app = $this->getApp(false);
+        $extension = $this->getExtension($app);
+        $app['extensions.SimpleForms']->config['recaptcha_enabled'] = 'Yes, why not.';
+        $app['extensions.SimpleForms']->config['recaptcha_private_key'] = 'ninja_koala';
+        $app['extensions.SimpleForms']->config['recaptcha_public_key'] = 'koalas_r_us';
+        $app['extensions.SimpleForms']->config['recaptcha_error_message'] = 'Drop Bear Attack!';
+        $app['extensions.SimpleForms']->config['recaptcha_theme'] = 'the_land_downunder';
+        $app['extensions.SimpleForms']->config['testmode'] = 'Sure thing';
+        $app['extensions.SimpleForms']->config['testmode_recipient'] = 'testaddress@example.com';
+        $app['extensions.SimpleForms']->config['csrf'] = 'Make it so';
+
+        $app['extensions.SimpleForms']->config['template'] = 'assets/simpleforms_form.twig';
+        $app['extensions.SimpleForms']->config['mail_template'] = 'assets/simpleforms_mail.twig';
+
+        $parameters = $this->getPostParameters();
+        $app['request'] = Request::create('/', 'POST', $parameters);
+        $app->boot();
+
+        $extension->simpleForm('test_simple_form');
+
+        $this->assertSame('Yes, why not.', $app['extensions.BoltForms']->config['recaptcha']['enabled']);
+        $this->assertSame('koalas_r_us', $app['extensions.BoltForms']->config['recaptcha']['public_key']);
+        $this->assertSame('ninja_koala', $app['extensions.BoltForms']->config['recaptcha']['private_key']);
+        $this->assertSame('Drop Bear Attack!', $app['extensions.BoltForms']->config['recaptcha']['error_message']);
+        $this->assertSame('the_land_downunder', $app['extensions.BoltForms']->config['recaptcha']['theme']);
+        $this->assertSame('Sure thing', $app['extensions.BoltForms']->config['debug']['enabled']);
+        $this->assertSame('testaddress@example.com', $app['extensions.BoltForms']->config['debug']['address']);
+        $this->assertSame('Make it so', $app['extensions.BoltForms']->config['csrf']);
+
+        $this->assertSame('assets/simpleforms_form.twig', $app['extensions.BoltForms']->config['templates']['form']);
+        $this->assertSame('assets/simpleforms_mail.twig', $app['extensions.BoltForms']->config['templates']['email']);
+
+        $map = array(
+            'config'  => 'config',
+            'data'    => 'form',
+            'fields'  => 'fields',
+            'subject' => 'subject',
+        );
+        $this->assertSame($map, $app['extensions.BoltForms']->config['fieldmap']['email']);
+    }
+
+    public function testFormValidationException()
+    {
+        $app = $this->getApp(false);
+        $extension = $this->getExtension($app);
+
+        // Keep an eye on the logger
+        $logger = $this->getMock('\Monolog\Logger', array('debug'), array('testlogger'));
+        $logger->expects($this->atLeastOnce())
+            ->method('debug')
+            ->will($this->returnCallback(function ($message) {
+                    \PHPUnit_Framework_Assert::assertSame('[SimpleForms] Form validation exception: There was an error in the form. Please check the form, and try again.', $message);
+                }
+            ))
+        ;
+        $app['logger.system'] = $logger;
+
+        $parameters = $this->getPostParameters();
+        unset($parameters['test_simple_form']['name']);
+
+        $app['request'] = Request::create('/', 'POST', $parameters);
+        $app->boot();
+
+        $extension->simpleForm('test_simple_form');
+    }
+
+    public function testRecaptchaRenderAddition()
+    {
+        $app = $this->getApp(false);
+        $extension = $this->getExtension($app);
+        $app['extensions.SimpleForms']->config['recaptcha_enabled'] = true;
+        $app['extensions.SimpleForms']->config['recaptcha_private_key'] = 'abc123';
+        $app['extensions.SimpleForms']->config['recaptcha_public_key'] = 'cde456';
+
+        $app['request'] = Request::create('/');
+        $app->boot();
+
+        $html = $extension->simpleForm('test_simple_form');
+        $this->assertInstanceOf('\Twig_Markup', $html);
+
+        $html = (string) $html;
+        $this->assertRegExp('#<script src="https://www.google.com/recaptcha/api.js\?hl=en-GB" async defer></script>#', $html);
+        $this->assertRegExp('#<div class="g-recaptcha" data-sitekey="cde456"></div>#', $html);
     }
 }
