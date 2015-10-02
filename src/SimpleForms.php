@@ -51,7 +51,7 @@ class SimpleForms
         }
 
         // setup a default sender address
-        if(empty($this->config['from_name'] && !empty($this->config['from_email'])) {
+        if(empty($this->config['from_name']) && !empty($this->config['from_email'])) {
             $this->config['from_name'] = $this->config['from_email'];
         }
 
