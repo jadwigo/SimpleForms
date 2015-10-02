@@ -76,12 +76,6 @@ demo:
   recipient_name: Info
   recipient_cc_email: another@example.com
   recipient_cc_name: Another Email Address
-  # if you want to save form content to a database make a table with the exact column names and types of your fields
-  insert_into_table: bolt_your_table_name
-  # uploaded files will be saved here if you have a file field
-  storage_location: demo_uploads
-  # uploaded files attached to the email if true
-  attach_files: true
   fields:
     subject:
       type: text
@@ -111,13 +105,6 @@ demo:
       empty_value: My favorite animals are
       choices: [ Kittens, Puppies, Penguins, Koala bears, "I don't like animals" ]
       required: true
-    file:
-      type: file
-      label: Upload a file
-      required: true
-      filetype: [jpg, gif, tiff, png, pdf]
-      #mimetypes are optional, used by Symfony Forms Validator
-      mimetype: ["application/pdf", "application/x-pdf", "image/tiff", "image/x-tiff", "image/png", "image/jpeg", "image/pjpeg", "image/gif"]
     option1:
       type: checkbox
       label: Newsletter

@@ -12,6 +12,9 @@
 		"bolt/bolt" : ">=2.0.0,<3.0.0",
 		"bolt/boltforms" : "^2.4"
 	},
+        "require-dev" : {
+                "phpunit/phpunit" : "^4.7"
+        },
 	"repositories" : [{
 			"type" : "composer",
 			"name" : "bolt",

@@ -45,6 +45,16 @@ class SimpleForms
             return new \Twig_Markup("<p><strong>SimpleForms is missing the configuration for the form named '$formName'!</strong></p>", 'UTF-8');
         }
 
+        // sanity check if there is a sender address for this form
+        if (!isset($this->config[$formName]['from_email']) && !isset($this->config['from_email'])) {
+            return new \Twig_Markup("<p><strong>SimpleForms is missing a sender email address for the form named '$formName'!</strong></p>", 'UTF-8');
+        }
+
+        // setup a default sender address
+        if(empty($this->config['from_name']) && !empty($this->config['from_email'])) {
+            $this->config['from_name'] = $this->config['from_email'];
+        }
+
         // Handle submitted form value transformation.
         $this->app['dispatcher']->addListener(BoltFormsEvents::SUBMISSION_PROCESSOR,  array($this, 'submissionProcessor'));
         $this->listeningFormName = $formName;
