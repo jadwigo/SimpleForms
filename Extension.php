@@ -65,7 +65,8 @@ class Extension extends \Bolt\BaseExtension
     {
         $this->app['twig.loader.filesystem']->addPath(__DIR__);
 
-        return (new SimpleForms($this->app))->simpleForm($formname, $with);
+        $form = new SimpleForms($this->app);
+        return $form->simpleForm($formname, $with);
     }
 
     /**
